@@ -1,0 +1,60 @@
+name: RuoYi API Test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with Ruff
+        run: |
+          pip install ruff
+          ruff check --ignore E501,F821 .
+
+      - name: Test with pytest
+        run: |
+          pytest tests/ -v --alluredir=./reports/allure-results --clean-alluredir
+
+      - name: Upload Allure Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-${{ matrix.python-version }}
+          path: ./reports/allure-results
+          retention-days: 7
+
+      - name: Generate Allure Report
+        uses: simple-elf/allure-report-action@v1
+        if: always()
+        with:
+          allure_results: ./reports/allure-results
+          allure_history: ./reports/allure-history
+          keep_reports: 20
+
+      - name: Deploy Allure Report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./reports/allure-report
+          destination_dir: allure-report

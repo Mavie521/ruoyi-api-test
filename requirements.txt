@@ -1,0 +1,30 @@
+# =============================================
+# 若依接口测试框架 依赖
+# =============================================
+# 测试框架
+pytest>=7.4.0
+pytest-xdist>=3.5.0          # 并发执行
+
+# HTTP 客户端
+requests>=2.31.0
+
+# 测试报告
+allure-pytest>=2.13.0
+
+# 配置管理
+python-dotenv>=1.0.0
+
+# 日志
+loguru>=0.7.0
+
+# Excel 数据驱动（如使用 Excel 管理测试用例）
+openpyxl>=3.1.0
+
+# 模板渲染（Excel 数据驱动模式下引用全局变量）
+jinja2>=3.1.4
+
+# JSONPath 断言
+jsonpath>=0.82
+
+# 数据库断言（MySQL 8.0+ / 9.x 需用 mysql-connector-python）
+mysql-connector-python>=9.0.0

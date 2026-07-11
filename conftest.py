@@ -1,0 +1,115 @@
+"""
+全局 conftest.py —— 环境初始化 + Allure 配置 + 失败自动附件
+"""
+import os
+import sys
+import json
+import pytest
+import allure
+from pathlib import Path
+from datetime import datetime
+from config.config import ALLURE_RESULTS_DIR, BASE_URL
+
+
+@pytest.fixture(scope="session", autouse=True)
+def allure_environment():
+    """
+    自动生成 Allure 环境信息文件
+    在 Allure 报告 > 环境 面板中显示
+    """
+    ALLURE_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # environment.properties
+    env_file = ALLURE_RESULTS_DIR / "environment.properties"
+    with open(env_file, "w", encoding="utf-8") as f:
+        f.write(f"BaseURL={BASE_URL}\n")
+        f.write(f"Python={sys.version.split()[0]}\n")
+        f.write(f"测试框架=若依接口测试框架 v1.0\n")
+        f.write(f"测试时间={datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+        f.write(f"操作系统={sys.platform}\n")
+
+    # categories.json（如果不存在则生成）
+    cat_file = ALLURE_RESULTS_DIR / "categories.json"
+    if not cat_file.exists():
+        categories = [
+            {"name": "✅ API 请求异常", "matchedStatuses": ["failed", "broken"],
+             "messageRegex": "(?i).*(?:ConnectionError|timeout|HTTPError|status.*code|500|404|请求异常).*"},
+            {"name": "❌ 数据库断言失败", "matchedStatuses": ["failed", "broken"],
+             "messageRegex": "(?i).*(?:数据库断言|assert_value|SQL|pymysql|DB).*"},
+            {"name": "❌ 业务校验失败", "matchedStatuses": ["failed"],
+             "messageRegex": "(?i).*(?:assert|断言|预期|期望|code.*200|success).*"},
+            {"name": "⚠️ 其他异常", "matchedStatuses": ["broken"]},
+            {"name": "⏭️ 已跳过", "matchedStatuses": ["skipped"]},
+        ]
+        with open(cat_file, "w", encoding="utf-8") as f:
+            json.dump(categories, f, ensure_ascii=False, indent=2)
+
+    yield
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """
+    测试失败时自动 attach 相关信息到 Allure 报告
+    - attach 异常堆栈
+    - attach fixture 中的请求/响应数据（如果有）
+    """
+    outcome = yield
+    report = outcome.get_result()
+
+    if report.when == "call" and report.failed:
+        # 1. attach 异常信息
+        if call.excinfo:
+            exc_type = call.excinfo.type.__name__
+            exc_msg = str(call.excinfo.value)
+            allure.attach(
+                f"❌ 异常类型: {exc_type}\n\n异常信息:\n{exc_msg}",
+                name="失败原因",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+
+        # 2. attach 测试代码位置
+        node_id = report.nodeid
+        allure.attach(
+            f"测试节点: {node_id}\n"
+            f"运行时间: {datetime.now().strftime('%H:%M:%S')}",
+            name="测试定位信息",
+            attachment_type=allure.attachment_type.TEXT,
+        )
+
+        # 3. 记录日志
+        from utils.logger import logger
+        logger.error(f"[FAIL] {node_id}")
+        if call.excinfo:
+            logger.error(f"  Reason: {call.excinfo.value}")
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config):
+    """测试开始前输出环境信息"""
+    from utils.logger import logger
+    logger.info("=" * 60)
+    logger.info("RuoYi API Test Framework Starting")
+    logger.info(f"  Target: {BASE_URL}")
+    logger.info(f"  Python: {sys.version.split()[0]}")
+    logger.info(f"  WorkDir: {Path(__file__).resolve().parent}")
+    logger.info("=" * 60)
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_sessionfinish(session, exitstatus):
+    """测试结束后输出汇总"""
+    from utils.logger import logger
+
+    # 统计
+    total = getattr(session, 'testscollected', 0)
+    failed_count = getattr(session, 'testsfailed', 0)
+    passed_count = total - failed_count
+
+    logger.info("=" * 60)
+    logger.info("Test Summary")
+    logger.info(f"  Total: {total}")
+    logger.info(f"  Passed: {passed_count}")
+    logger.info(f"  Failed: {failed_count}")
+    logger.info(f"  ExitCode: {exitstatus}")
+    logger.info("=" * 60)
