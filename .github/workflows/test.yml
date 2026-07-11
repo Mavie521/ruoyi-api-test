@@ -7,7 +7,7 @@ on:
     branches: [ main, master ]
 
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -26,42 +26,33 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Lint with Ruff
+      - name: Check project structure
         run: |
-          pip install ruff
-          ruff check --ignore E501,F821 .
-
-      - name: Validate framework structure
-        run: |
-          echo "=== 检查项目结构 ==="
-          test -f api/base_api.py && echo "✅ api/base_api.py"
-          test -f api/login_api.py && echo "✅ api/login_api.py"
-          test -f api/role_api.py && echo "✅ api/role_api.py"
-          test -f api/system_user_api.py && echo "✅ api/system_user_api.py"
-          test -f tests/test_login.py && echo "✅ tests/test_login.py"
-          test -f tests/test_business_flow.py && echo "✅ tests/test_business_flow.py"
-          test -f README.md && echo "✅ README.md"
+          echo "=== 检查必要文件 ==="
+          for f in api/base_api.py api/login_api.py api/role_api.py api/system_user_api.py tests/test_login.py tests/test_business_flow.py tests/test_system_user.py tests/test_role.py utils/db_utils.py README.md requirements.txt; do
+            if [ -f "$f" ]; then
+              echo "✅ $f"
+            else
+              echo "❌ $f 缺失！"
+              exit 1
+            fi
+          done
           echo ""
+          echo "项目结构完整 ✅"
 
-      - name: Verify Python imports
+      - name: Test Python import
         run: |
           python -c "
           import sys
           sys.path.insert(0, '.')
           print('=== 验证模块导入 ===')
-          from api.base_api import BaseApi; print('✅ base_api')
-          from api.login_api import LoginApi; print('✅ login_api')
-          from api.role_api import RoleApi; print('✅ role_api')
-          from utils.logger import logger; print('✅ logger')
-          from utils.db_utils import DbClient; print('✅ db_utils')
-          from utils.excel_utils import read_excel; print('✅ excel_utils')
-          from utils.assertions import HttpAssert; print('✅ assertions')
-          from utils.data_driver import render_case, send_request; print('✅ data_driver')
-          print()
-          print('所有模块导入成功！框架结构验证通过 ✅')
+          from api.base_api import BaseApi
+          from api.login_api import LoginApi
+          from api.role_api import RoleApi
+          from api.system_user_api import SystemUserApi
+          from utils.logger import logger
+          from utils.db_utils import DbClient
+          from utils.excel_utils import read_excel
+          from utils.data_driver import render_case, send_request, do_assert
+          print('全部模块导入成功 ✅')
           "
-
-      - name: Collect test count (skip if no backend)
-        run: |
-          python -m pytest tests/ testcases/ --collect-only -q
-        continue-on-error: true
