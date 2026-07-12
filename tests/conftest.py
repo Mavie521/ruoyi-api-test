@@ -23,7 +23,7 @@ def admin_login() -> LoginApi:
     api = LoginApi()
     token = api.login(ADMIN_USERNAME, ADMIN_PASSWORD)
     assert token, f"管理员登录失败！请检查 {ADMIN_USERNAME}@BASE_URL"
-    logger.info(f"✅ 管理员登录成功，token 已获取")
+    logger.info(f" 管理员登录成功，token 已获取")
     return api
 
 

@@ -72,26 +72,21 @@ services:
       redis:
         condition: service_healthy
     environment:
-      # ===== 数据库配置（RuoYi 用 Druid 连接池，变量名用 druid.master.xxx） =====
-      SPRING_DATASOURCE_DRUID_MASTER_URL: jdbc:mysql://mysql:3306/ry-vue?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_DRUID_MASTER_USERNAME: root
-      SPRING_DATASOURCE_DRUID_MASTER_PASSWORD: root
-      # ===== Redis 配置 =====
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
+      # ===== SPRING_APPLICATION_JSON（优先级最高，一定生效） =====
+      SPRING_APPLICATION_JSON: '{"spring":{"data":{"redis":{"host":"redis","port":6379}},"datasource":{"druid":{"master":{"url":"jdbc:mysql://mysql:3306/ry-vue?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true","username":"root","password":"root"}}},"server":{"port":8080}}}'
       # ===== 若依应用配置 =====
-      SERVER_PORT: 8080
       RUOYI_NAME: RuoYi
       RUOYI_VERSION: 3.9.2
       RUOYI_PROFILE: /home/ruoyi/uploadPath
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/login >/dev/null 2>&1 || exit 1"]
+      # 检查端口是否在监听（不关心 HTTP 状态码）
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/ >/dev/null 2>&1 || curl -sf http://localhost:8080/login >/dev/null 2>&1 || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 30
-      start_period: 60s
+      start_period: 30s
     networks:
       - ry-network
 
@@ -121,6 +116,8 @@ services:
       context: .
       dockerfile: Dockerfile.test
     container_name: ry-test-runner
+    profiles:
+      - test
     depends_on:
       ruoyi-api:
         condition: service_healthy
@@ -135,11 +132,39 @@ services:
     volumes:
       - ./reports:/app/reports
       - ./logs:/app/logs
-    command: >
-      sh -c "pytest tests/ -m p0
-        --alluredir=./reports/allure-results
-        --clean-alluredir -v
-        --reruns 1 --reruns-delay 5"
+    command: sh -c "pytest tests/ -m p0 --alluredir=./reports/allure-results --clean-alluredir -v --reruns 1 --reruns-delay 5"
+    networks:
+      - ry-network
+
+  # =============================================
+  # Allure 报告生成器（Docker 容器化，免安装）
+  # =============================================
+  allure-reporter:
+    build:
+      context: ./docker/allure
+      dockerfile: Dockerfile
+    container_name: ry-allure-reporter
+    profiles:
+      - report
+    volumes:
+      - ./reports:/app/reports
+    working_dir: /app/reports
+    command: generate allure-results -o allure-report --clean
+    networks:
+      - ry-network
+
+  # =============================================
+  # Nginx 报告托管（长期稳定访问）
+  # 浏览器访问 http://192.168.159.128:8088
+  # =============================================
+  allure-report:
+    image: nginx:alpine
+    container_name: ry-allure-report
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+    volumes:
+      - ./reports/allure-report:/usr/share/nginx/html:ro
     networks:
       - ry-network
 

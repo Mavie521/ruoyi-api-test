@@ -20,7 +20,7 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-echo "🧪 运行测试 (Docker)..."
+echo " 运行测试 (Docker)..."
 echo "   参数: ${EXTRA_ARGS[*]:-默认 p0}"
 
 docker-compose run --rm test-runner \
@@ -29,4 +29,4 @@ docker-compose run --rm test-runner \
         --clean-alluredir -v"
 
 echo ""
-echo "📊 报告已生成: reports/allure-results"
+echo " 报告已生成: reports/allure-results"

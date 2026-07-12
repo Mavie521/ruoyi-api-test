@@ -42,7 +42,7 @@ class TestBusinessFlow:
             }
             resp = system_user_api.create_user(user_data)
             assert resp.get("code") == 200, f"创建用户失败: {resp}"
-            logger.info(f"  ✅ 用户 {username} 创建成功")
+            logger.info(f"   用户 {username} 创建成功")
 
             # 从列表中找到新建用户的 ID
             list_resp = system_user_api.list_users({"pageSize": 100})
@@ -57,7 +57,7 @@ class TestBusinessFlow:
                 "SELECT user_id FROM sys_user WHERE user_id=%s AND del_flag='0'",
                 params=(user_id,),
             )
-            logger.info(f"  ✅ 数据库已确认用户存在")
+            logger.info(f"   数据库已确认用户存在")
 
         # =========================================================
         # Step 2: 创建新角色
@@ -74,7 +74,7 @@ class TestBusinessFlow:
             }
             resp = role_api.create_role(role_data)
             assert resp.get("code") == 200, f"创建角色失败: {resp}"
-            logger.info(f"  ✅ 角色 {role_name} 创建成功")
+            logger.info(f"   角色 {role_name} 创建成功")
 
             # 从列表中找到新建角色的 ID
             list_resp = role_api.list_roles({"pageSize": 100})
@@ -105,7 +105,7 @@ class TestBusinessFlow:
                 "SELECT * FROM sys_user_role WHERE user_id=%s AND role_id=%s",
                 params=(user_id, role_id),
             )
-            logger.info(f"  ✅ 用户 {user_id} 已分配角色 {role_id}")
+            logger.info(f"   用户 {user_id} 已分配角色 {role_id}")
 
         # =========================================================
         # Step 4: 验证新用户可以登录
@@ -115,12 +115,12 @@ class TestBusinessFlow:
             new_login = LoginApi()
             token = new_login.login(username, "123456")
             assert token is not None, f"新用户 {username} 登录失败"
-            logger.info(f"  ✅ 新用户 {username} 登录成功")
+            logger.info(f"   新用户 {username} 登录成功")
 
             # 验证能查到自己的信息
             info = new_login.get_info()
             assert info.get("code") == 200
-            logger.info(f"  ✅ 新用户可正常查询个人信息")
+            logger.info(f"   新用户可正常查询个人信息")
 
         # =========================================================
         # Step 5: 清理数据（删除用户和角色）
@@ -134,7 +134,7 @@ class TestBusinessFlow:
                 expected="2",
                 params=(user_id,),
             )
-            logger.info(f"  ✅ 用户 {username} 已逻辑删除")
+            logger.info(f"   用户 {username} 已逻辑删除")
 
             # 删除角色
             resp = role_api.delete_role([role_id])
@@ -144,7 +144,7 @@ class TestBusinessFlow:
                 expected="2",
                 params=(role_id,),
             )
-            logger.info(f"  ✅ 角色 {role_name} 已逻辑删除")
+            logger.info(f"   角色 {role_name} 已逻辑删除")
 
         logger.info("=" * 50)
-        logger.info("🎯 用户角色生命周期测试全部通过")
+        logger.info(" 用户角色生命周期测试全部通过")

@@ -19,7 +19,7 @@ class HttpAssert:
         actual = res.status_code
         assert actual == expected, \
             f"状态码断言失败: 预期 {expected}, 实际 {actual}"
-        logger.info(f"✅ 状态码断言通过: {actual}")
+        logger.info(f" 状态码断言通过: {actual}")
 
     @staticmethod
     @allure.step("断言: 响应成功标志")
@@ -28,7 +28,7 @@ class HttpAssert:
         body = res.json()
         assert body.get("success", False) is True, \
             f"success标志断言失败: {body.get('msg', '无msg')}"
-        logger.info(f"✅ success=True, msg={body.get('msg', '')}")
+        logger.info(f" success=True, msg={body.get('msg', '')}")
 
     @staticmethod
     @allure.step("断言: 响应 code")
@@ -37,7 +37,7 @@ class HttpAssert:
         actual = res.json().get("code")
         assert actual == expected, \
             f"code断言失败: 预期 {expected}, 实际 {actual}"
-        logger.info(f"✅ code 断言通过: {actual}")
+        logger.info(f" code 断言通过: {actual}")
 
     @staticmethod
     @allure.step("断言: JSONPath 精确匹配")
@@ -51,7 +51,7 @@ class HttpAssert:
         actual = actual_list[0]
         assert actual == expected, \
             f"JSONPath断言失败: {jsonpath_expr}\n  预期: {expected}\n  实际: {actual}"
-        logger.info(f"✅ JSONPath断言通过: {jsonpath_expr} == {expected}")
+        logger.info(f" JSONPath断言通过: {jsonpath_expr} == {expected}")
 
     @staticmethod
     @allure.step("断言: 响应包含文本")
@@ -59,7 +59,7 @@ class HttpAssert:
         """断言响应体包含指定文本"""
         assert text in res.text, \
             f"包含断言失败: 响应中未找到 '{text}'"
-        logger.info(f"✅ 包含断言通过: 包含 '{text}'")
+        logger.info(f" 包含断言通过: 包含 '{text}'")
 
     @staticmethod
     @allure.step("断言: 列表不为空")
@@ -69,7 +69,7 @@ class HttpAssert:
         assert actual_list is not False, f"JSONPath 未匹配: {jsonpath_expr}"
         assert len(actual_list[0]) > 0, \
             f"列表为空: {jsonpath_expr}"
-        logger.info(f"✅ 列表不为空: {jsonpath_expr} ({len(actual_list[0])}条)")
+        logger.info(f" 列表不为空: {jsonpath_expr} ({len(actual_list[0])}条)")
 
     @staticmethod
     @allure.step("断言: 字段包含预期值")
@@ -80,4 +80,4 @@ class HttpAssert:
         actual = str(actual_list[0])
         assert expected in actual, \
             f"包含断言失败: 字段值 '{actual}' 未包含 '{expected}'"
-        logger.info(f"✅ 字段包含断言通过: '{actual}' 包含 '{expected}'")
+        logger.info(f" 字段包含断言通过: '{actual}' 包含 '{expected}'")

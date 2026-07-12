@@ -38,9 +38,9 @@ class LoginApi(BaseApi):
 
         if token:
             self.set_token(token)
-            logger.info(f"✅ 登录成功: {username}")
+            logger.info(f" 登录成功: {username}")
         else:
-            logger.error(f"❌ 登录失败: {body_resp.get('msg', '未知错误')}")
+            logger.error(f" 登录失败: {body_resp.get('msg', '未知错误')}")
 
         allure.attach(
             f"响应: {body_resp}",

@@ -1,0 +1,25 @@
+# =============================================
+# RuoYi Docker 环境覆盖配置
+# 挂载到容器中，覆盖 JAR 包内的默认配置
+# =============================================
+spring:
+  # 数据库（Druid 连接池）
+  datasource:
+    druid:
+      master:
+        url: jdbc:mysql://mysql:3306/ry-vue?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+        username: root
+        password: root
+
+  # Redis
+  redis:
+    host: redis
+    port: 6379
+
+# 服务器
+server:
+  port: 8080
+
+# 若依
+ruoyi:
+  profile: /home/ruoyi/uploadPath

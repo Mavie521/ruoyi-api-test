@@ -129,7 +129,7 @@ class DbClient:
         """
         result = self.query_one(sql, params)
         assert result is not None, \
-            f"❌ 数据库断言失败: 查询无结果\n  SQL: {sql}  params: {params}"
+            f" 数据库断言失败: 查询无结果\n  SQL: {sql}  params: {params}"
 
         if column:
             actual = result.get(column)
@@ -137,7 +137,7 @@ class DbClient:
             actual = list(result.values())[0] if result else None
 
         assert actual == expected, (
-            f"❌ 数据库断言失败: 值不匹配\n"
+            f" 数据库断言失败: 值不匹配\n"
             f"  SQL: {sql}\n"
             f"  参数: {params}\n"
             f"  字段: {column or '(自动取第一个字段)'}\n"
@@ -145,7 +145,7 @@ class DbClient:
             f"  实际: {repr(actual)}"
         )
 
-        logger.info(f"✅ 数据库断言通过: {actual} == {expected}")
+        logger.info(f" 数据库断言通过: {actual} == {expected}")
         return actual
 
     @allure.step("数据库断言: 记录存在")
@@ -153,16 +153,16 @@ class DbClient:
         """断言查询结果至少有一条记录"""
         rows = self.query(sql, params)
         assert len(rows) >= 1, \
-            f"❌ 数据库断言失败: 期望记录存在，但未查到\n  SQL: {sql}  params: {params}"
-        logger.info(f"✅ 数据库断言通过: 记录存在 ({len(rows)}条)")
+            f" 数据库断言失败: 期望记录存在，但未查到\n  SQL: {sql}  params: {params}"
+        logger.info(f" 数据库断言通过: 记录存在 ({len(rows)}条)")
 
     @allure.step("数据库断言: 记录不存在")
     def assert_not_exists(self, sql: str, params: tuple = None):
         """断言查询结果为空（用于验证删除成功）"""
         rows = self.query(sql, params)
         assert len(rows) == 0, \
-            f"❌ 数据库断言失败: 期望无记录，但查到 {len(rows)} 条\n  SQL: {sql}  params: {params}"
-        logger.info("✅ 数据库断言通过: 记录不存在")
+            f" 数据库断言失败: 期望无记录，但查到 {len(rows)} 条\n  SQL: {sql}  params: {params}"
+        logger.info(" 数据库断言通过: 记录不存在")
 
     # ---------------------------------------------------------
     # 辅助

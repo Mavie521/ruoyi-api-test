@@ -37,7 +37,7 @@ class BaseApi:
         """设置 token，后续所有请求自动携带 Authorization 头"""
         self._token = token
         self.session.headers.update({"Authorization": f"Bearer {token}"})
-        logger.info("🔑 Token 已设置")
+        logger.info(" Token 已设置")
 
     def clear_token(self):
         """清除 token"""
@@ -98,7 +98,7 @@ class BaseApi:
             return res
         except requests.RequestException as e:
             logger.error(f"请求异常: {method} {url} - {e}")
-            allure.attach(str(e), name="❌ 请求异常", attachment_type=allure.attachment_type.TEXT)
+            allure.attach(str(e), name=" 请求异常", attachment_type=allure.attachment_type.TEXT)
             raise
 
     def get(self, url: str, **kwargs) -> Response:

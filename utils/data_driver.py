@@ -81,12 +81,12 @@ def do_assert(case: dict, res: requests.Response):
         actual = str(actual_list[0])
         assert actual == expected, \
             f"JSONPath断言失败: {check} 预期={expected} 实际={actual}"
-        logger.info(f"  ✅ JSONPath断言通过: {check} == {expected}")
+        logger.info(f"   JSONPath断言通过: {check} == {expected}")
     else:
         # 包含断言: expected在响应文本中即可
         assert expected in res.text, \
             f"包含断言失败: 未找到'{expected}'"
-        logger.info(f"  ✅ 包含断言通过: 响应包含'{expected}'")
+        logger.info(f"   包含断言通过: 响应包含'{expected}'")
 
 
 def do_extract(case: dict, res: requests.Response, global_vars: dict):
@@ -105,4 +105,4 @@ def do_extract(case: dict, res: requests.Response, global_vars: dict):
         actual_list = jsonpath.jsonpath(res.json(), jsonpath_expr)
         if actual_list:
             global_vars[var_name] = actual_list[0]
-            logger.info(f"  📤 提取: {var_name} = {actual_list[0]}")
+            logger.info(f"   提取: {var_name} = {actual_list[0]}")

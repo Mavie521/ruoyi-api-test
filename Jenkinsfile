@@ -90,7 +90,7 @@ pipeline {
                     userRemoteConfigs: [[url: 'https://github.com/Mavie521/ruoyi-api-test.git']]
                 ])
                 script {
-                    echo "✅ 分支: ${env.BRANCH_NAME} / 提交: ${env.GIT_COMMIT.take(8)}"
+                    echo " 分支: ${env.BRANCH_NAME} / 提交: ${env.GIT_COMMIT.take(8)}"
                     echo "   模式: ${params.RUN_MODE} / 环境: ${params.ENV}"
                 }
             }
@@ -106,7 +106,7 @@ pipeline {
                         // Docker 模式：检查 Docker 环境
                         sh 'docker --version'
                         sh 'docker-compose --version || docker compose version'
-                        echo "✅ Docker 环境就绪"
+                        echo " Docker 环境就绪"
                     } else {
                         // Direct 模式：创建虚拟环境 + 安装依赖
                         sh """
@@ -115,7 +115,7 @@ pipeline {
                             pip install --upgrade pip -q
                             pip install -r requirements.txt -q
                         """
-                        echo "✅ Python 依赖安装完成"
+                        echo " Python 依赖安装完成"
                     }
                 }
             }
@@ -144,7 +144,7 @@ pipeline {
                         elapsed=0
                         while [ \$elapsed -lt \$timeout ]; do
                             if curl -sf http://localhost:8080/actuator/health 2>/dev/null | grep -q UP; then
-                                echo '✅ RuoYi 后端已就绪'
+                                echo ' RuoYi 后端已就绪'
                                 break
                             fi
                             sleep 3
@@ -170,7 +170,7 @@ pipeline {
                             python -m pytest --collect-only tests/ -q
                         """
                     }
-                    echo "✅ 用例收集完成"
+                    echo " 用例收集完成"
                 }
             }
         }
@@ -219,7 +219,7 @@ pipeline {
                         report: 'reports/allure-report',
                         reportBuildPolicy: 'ALWAYS'
                     )
-                    echo "✅ Allure 报告已生成"
+                    echo " Allure 报告已生成"
                 }
             }
         }
@@ -239,7 +239,7 @@ pipeline {
                         artifacts: 'logs/**',
                         allowEmptyArchive: true
                     )
-                    echo "✅ 测试产物已归档"
+                    echo " 测试产物已归档"
                 }
             }
         }
@@ -253,7 +253,7 @@ pipeline {
             script {
                 // 记录构建摘要
                 echo "=" * 60
-                echo "📋 构建摘要"
+                echo " 构建摘要"
                 echo "   模式:     ${params.RUN_MODE}"
                 echo "   环境:     ${params.ENV}"
                 echo "   标记:     ${params.MARKER}"
@@ -266,13 +266,13 @@ pipeline {
 
         success {
             script {
-                echo "🎉 测试全部通过！"
+                echo " 测试全部通过！"
             }
         }
 
         failure {
             script {
-                echo "❌ 测试有失败，请查看 Allure 报告"
+                echo " 测试有失败，请查看 Allure 报告"
             }
         }
 
@@ -281,7 +281,7 @@ pipeline {
                 // Docker 模式：关闭服务
                 if (params.RUN_MODE == 'docker') {
                     sh 'docker-compose down -v 2>/dev/null || true'
-                    echo "🐳 Docker 服务已关闭"
+                    echo " Docker 服务已关闭"
                 }
                 // 清理工作空间
                 cleanWs(cleanWhenNotBuilt: false,

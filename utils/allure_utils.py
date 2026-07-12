@@ -37,17 +37,17 @@ def attach_request(method: str, url: str, **kwargs):
     """将 HTTP 请求 attach 到 Allure 报告"""
     parts = [f"{method.upper()} {url}"]
     if kwargs.get("headers"):
-        parts.append(f"\n📋 Headers:\n{_pretty_json(kwargs['headers'])}")
+        parts.append(f"\n Headers:\n{_pretty_json(kwargs['headers'])}")
     if kwargs.get("params"):
-        parts.append(f"\n🔗 Params:\n{_pretty_json(kwargs['params'])}")
+        parts.append(f"\n Params:\n{_pretty_json(kwargs['params'])}")
     if kwargs.get("json"):
-        parts.append(f"\n📦 JSON Body:\n{_pretty_json(kwargs['json'])}")
+        parts.append(f"\n JSON Body:\n{_pretty_json(kwargs['json'])}")
     if kwargs.get("data"):
-        parts.append(f"\n📦 Form Data:\n{_pretty_json(kwargs['data'])}")
+        parts.append(f"\n Form Data:\n{_pretty_json(kwargs['data'])}")
 
     allure.attach(
         "\n".join(parts),
-        name=f"⬆️ 请求 ({method})",
+        name=f"⬆ 请求 ({method})",
         attachment_type=allure.attachment_type.TEXT,
     )
 
@@ -61,11 +61,11 @@ def attach_response(res: requests.Response):
         body_str = res.text[:2000]
 
     text = (
-        f"⏱️ 状态码: {res.status_code}\n"
-        f"⏱️ 耗时: {res.elapsed.total_seconds():.2f}s\n"
-        f"\n📥 Response Body:\n{body_str}"
+        f" 状态码: {res.status_code}\n"
+        f" 耗时: {res.elapsed.total_seconds():.2f}s\n"
+        f"\n Response Body:\n{body_str}"
     )
-    allure.attach(text, name="⬇️ 响应", attachment_type=allure.attachment_type.TEXT)
+    allure.attach(text, name="⬇ 响应", attachment_type=allure.attachment_type.TEXT)
 
 
 def attach_db_result(sql: str, results: list, elapsed: float = 0):
@@ -76,7 +76,7 @@ def attach_db_result(sql: str, results: list, elapsed: float = 0):
     if len(results) > 10:
         lines.append(f"\n... 共 {len(results)} 条，仅显示前10条")
     allure.attachment_type.Text
-    allure.attach("\n".join(lines), name="🗄️ 数据库查询", attachment_type=allure.attachment_type.TEXT)
+    allure.attach("\n".join(lines), name=" 数据库查询", attachment_type=allure.attachment_type.TEXT)
 
 
 def _pretty_json(data) -> str:

@@ -26,8 +26,10 @@ COPY . .
 # 创建报告、日志目录
 RUN mkdir -p reports logs
 
-# 设置时区
+# 设置时区 + UTF-8 编码（修复 Allure 环境块中文乱码）
 ENV TZ=Asia/Shanghai
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # 默认命令（可被 docker-compose 覆盖）
 CMD ["pytest", "tests/", "-m", "p0", "--alluredir=./reports/allure-results", "--clean-alluredir", "-v"]
