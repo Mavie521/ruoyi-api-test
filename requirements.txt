@@ -4,6 +4,7 @@
 # 测试框架
 pytest>=7.4.0
 pytest-xdist>=3.5.0          # 并发执行
+pytest-rerunfailures>=12.0   # 失败重试
 
 # HTTP 客户端
 requests>=2.31.0
