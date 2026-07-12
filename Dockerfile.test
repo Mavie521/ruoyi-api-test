@@ -1,0 +1,32 @@
+# =============================================
+# RuoYi API Test — Test Runner Docker Image
+# =============================================
+FROM python:3.11-slim
+
+LABEL maintainer="Mavie"
+LABEL description="RuoYi API Test Framework — Pytest Test Runner"
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装系统依赖（MySQL 客户端用于健康检查）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-mysql-client \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制依赖文件并安装（利用 Docker 缓存）
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制项目代码
+COPY . .
+
+# 创建报告、日志目录
+RUN mkdir -p reports logs
+
+# 设置时区
+ENV TZ=Asia/Shanghai
+
+# 默认命令（可被 docker-compose 覆盖）
+CMD ["pytest", "tests/", "-m", "p0", "--alluredir=./reports/allure-results", "--clean-alluredir", "-v"]

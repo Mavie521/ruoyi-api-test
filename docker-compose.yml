@@ -1,0 +1,158 @@
+# =============================================
+# RuoYi API Test Framework — Docker 部署
+# 一条命令启动完整测试环境
+#
+# 用法:
+#   docker compose up -d                # 启动所有服务
+#   docker compose up test-runner       # 单独跑测试
+#   docker compose down -v              # 停止并清除数据
+# =============================================
+
+services:
+
+  # =============================================
+  # MySQL 8.0
+  # =============================================
+  mysql:
+    image: mysql:8.0
+    container_name: ry-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ry-vue
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_general_ci
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - ry-network
+
+  # =============================================
+  # Redis 7
+  # =============================================
+  redis:
+    image: redis:7-alpine
+    container_name: ry-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ry-network
+
+  # =============================================
+  # RuoYi 后端 v3.9.2
+  # 多阶段构建：自动从源码编译，无需你手动打包
+  # =============================================
+  ruoyi-api:
+    build:
+      context: ./docker/ruoyi
+      dockerfile: Dockerfile
+      args:
+        - RUOYI_VERSION=v3.9.2
+    container_name: ry-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # ===== 数据库配置（覆盖 JAR 内默认配置） =====
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ry-vue?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      # ===== Redis 配置 =====
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      # ===== 若依应用配置 =====
+      SERVER_PORT: 8080
+      RUOYI_NAME: RuoYi
+      RUOYI_VERSION: 3.9.2
+      RUOYI_PROFILE: /home/ruoyi/uploadPath
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/login >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    networks:
+      - ry-network
+
+  # =============================================
+  # 若依前端 (Nginx) — 可选，跑接口测试不需要
+  # 如果需要看前端页面，取消注释即可
+  # =============================================
+  # ruoyi-web:
+  #   image: nginx:alpine
+  #   container_name: ry-web
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - ruoyi-api
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+  #     - ./docker/nginx/html:/usr/share/nginx/html
+  #   networks:
+  #     - ry-network
+
+  # =============================================
+  # 测试执行器 (pytest)
+  # =============================================
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: ry-test-runner
+    depends_on:
+      ruoyi-api:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://ruoyi-api:8080
+      ENV: docker
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ry-vue
+      DB_USER: root
+      DB_PASSWORD: root
+    volumes:
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+    command: >
+      sh -c "pytest tests/ -m p0
+        --alluredir=./reports/allure-results
+        --clean-alluredir -v
+        --reruns 1 --reruns-delay 5"
+    networks:
+      - ry-network
+
+# =============================================
+# 持久化卷
+# =============================================
+volumes:
+  mysql_data:
+  redis_data:
+
+# =============================================
+# 网络
+# =============================================
+networks:
+  ry-network:
+    driver: bridge

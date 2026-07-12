@@ -25,6 +25,7 @@ class Env(str, Enum):
     DEV = "dev"
     STAGING = "staging"
     PROD = "prod"
+    DOCKER = "docker"
 
 # 优先级: --env 参数 > ENV 环境变量 > "dev"
 ACTIVE_ENV = Env.DEV
