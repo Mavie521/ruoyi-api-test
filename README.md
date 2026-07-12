@@ -84,20 +84,31 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-修改 `.env` 中的配置：
+创建 `.env` 文件（或从模板复制）：
+
+```bash
+cp .env.example .env
+```
+
+根据你的环境修改 `.env` 中的配置：
 
 ```ini
-BASE_URL=http://localhost:8080        # 若依后端地址
-ADMIN_USERNAME=admin                  # 管理员账号
-ADMIN_PASSWORD=admin123               # 管理员密码
+# 若依后端地址
+BASE_URL=http://localhost:8080
 
-# 数据库配置（用于数据库断言）
+# 管理员账号
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123
+
+# MySQL 数据库配置（用于数据库断言）
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_NAME=ry-vue
 DB_USER=root
 DB_PASSWORD=123456
 ```
+
+> `.env` 为默认配置文件，框架自动读取。切换环境请参考下方"多环境切换"。
 
 ### 3. 运行测试
 
@@ -115,18 +126,18 @@ pytest tests/ -v
 
 # ---------- 按环境运行 ----------
 
-# 开发环境（默认）
+# 默认环境（读取 .env）
 pytest tests/ -v
 
-# 预发布环境
-pytest tests/ --env=staging -v
+# 指定环境（读取 .env.staging）
+ENV=staging pytest tests/ -v
 
-# ---------- 生产辅助 ----------
+# ---------- 进阶用法 ----------
 
 # 并发执行（4 进程）
 pytest tests/ -n 4 -v
 
-# 失败重试
+# 失败重试（失败用例自动重试 2 次）
 pytest tests/ --reruns 2 --reruns-delay 5 -v
 
 # 排除慢速用例
@@ -136,6 +147,14 @@ pytest tests/ -m "not slow" -v
 pytest tests/ -k login -v
 
 # ---------- 使用 run.py 入口 ----------
+
+python run.py run                    # 运行 + 生成 Allure 报告
+python run.py run -m p0              # 只跑 P0
+python run.py run --env=staging      # 指定环境
+python run.py run -n 4 --reruns 2    # 并发 + 重试
+python run.py report                 # 仅生成报告（需安装 Allure CLI）
+python run.py open                   # 打开报告
+```
 
 python run.py run
 python run.py run --env=staging
@@ -477,7 +496,8 @@ def test_something(login_api, db):
 | 用户管理（真实） | 9 | — | 9 | 5 | 4 | — |
 | 用户管理（测试） | 7 | — | 7 | 5 | 2 | 1 |
 | 角色管理 | 11 | — | 11 | 5 | 2 | 3 |
-| **合计** | **33** | **—** | **33** | **18** | **11** | **4** |
+| 全流程业务 | 1 | — | 1 | — | 1 | — |
+| **合计** | **34** | **—** | **34** | **18** | **12** | **4** |
 
 ### 执行策略
 
@@ -548,6 +568,29 @@ jobs:
 ### 数据库断言失败？
 
 确认数据库连接信息正确，且表结构匹配。
+
+### 如何切换环境？
+
+框架支持多环境，通过 `ENV` 环境变量或 `--env` 参数切换：
+
+```bash
+# 方式一：环境变量
+ENV=staging pytest tests/ -v
+
+# 方式二：run.py 参数
+python run.py run --env=staging
+```
+
+框架会加载对应的 `.env.{env}` 文件（如 `ENV=staging` 时加载 `.env.staging`）。
+不指定环境时默认读取 `.env`。
+
+### 配置文件有哪些？
+
+| 文件 | 用途 |
+|------|------|
+| `.env` | 默认配置，框架自动读取 |
+| `.env.staging` | 预发布环境配置，`ENV=staging` 时读取 |
+| `.env.example` | 配置模板，包含所有字段的占位符说明 |
 
 ### 如何添加新接口的测试？
 
