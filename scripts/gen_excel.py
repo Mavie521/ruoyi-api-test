@@ -130,5 +130,8 @@ for i, w in enumerate(col_widths, 1):
 # 冻结表头
 ws.freeze_panes = 'A3'
 
-wb.save('D:/Code/claude_test01/ruoyi_api_test/data/test_cases.xlsx')
-print(f'OK! 生成了 {len(cases)} 条测试用例')
+from pathlib import Path
+
+output_path = Path(__file__).resolve().parent.parent / "data" / "test_cases.xlsx"
+wb.save(str(output_path))
+print(f'OK! 生成了 {len(cases)} 条测试用例，保存至: {output_path}')

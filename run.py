@@ -46,7 +46,6 @@ def run_tests(args):
     # 多环境参数传递
     env_flag = getattr(args, "env", None) or os.getenv("ENV", "dev")
     os.environ["ENV"] = env_flag  # 确保子进程继承
-    cmd.insert(0, f"--env={env_flag}")
 
     test_paths, mark, keyword = resolve_target(args, base_dir)
     cmd.extend(test_paths)
@@ -102,13 +101,13 @@ def open_allure_report():
 
 def main():
     parser = argparse.ArgumentParser(description="若依接口测试框架")
-    parser.add_argument("--env", default="dev", choices=["dev", "staging", "prod"],
-                        help="指定运行环境（dev/staging/prod）")
     sub = parser.add_subparsers(dest="command")
 
     # run 子命令
     p = sub.add_parser("run", help="运行测试")
     p.add_argument("test_path", nargs="?", help="测试路径或 marker 名（如 smoke）")
+    p.add_argument("--env", default="dev", choices=["dev", "staging", "prod"],
+                   help="指定运行环境（dev/staging/prod）")
     p.add_argument("-m", "--mark", help="按 marker 运行（smoke/critical/regression）")
     p.add_argument("-k", "--keyword", help="按关键字运行")
     p.add_argument("-n", "--workers", type=int, default=1, help="并发进程数")
