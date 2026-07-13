@@ -27,11 +27,6 @@ class LoginApi(BaseApi):
             "password": password,
         }
         res = self.post("/login", json=body)
-        allure.attach(
-            f"请求: POST /login\nbody: {body}",
-            name="登录请求",
-            attachment_type=allure.attachment_type.TEXT,
-        )
 
         body_resp = res.json()
         token = body_resp.get("token")
@@ -41,12 +36,6 @@ class LoginApi(BaseApi):
             logger.info(f" 登录成功: {username}")
         else:
             logger.error(f" 登录失败: {body_resp.get('msg', '未知错误')}")
-
-        allure.attach(
-            f"响应: {body_resp}",
-            name="登录响应",
-            attachment_type=allure.attachment_type.TEXT,
-        )
 
         return token
 

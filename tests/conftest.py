@@ -109,14 +109,32 @@ def new_real_user_data() -> dict:
 
 
 @pytest.fixture
-def new_role_data() -> dict:
-    """生成新角色数据（/system/role 需要 menuIds 不为 null）"""
+def new_role_data(request, db) -> dict:
+    """
+    生成新角色数据
+    自动清理：用例结束后删除创建的角色（防止测试数据污染）
+    """
     import time
     suffix = str(int(time.time() * 1000))[-6:]
-    return {
+    role_key = f"test_role_{suffix}"
+    data = {
         "roleName": f"测试角色_{suffix}",
-        "roleKey": f"test_role_{suffix}",
+        "roleKey": role_key,
         "roleSort": 1,
         "status": "0",
-        "menuIds": [],  # 避免 Java NullPointerException
+        "menuIds": [],
     }
+
+    # yield 之前的代码在测试前执行
+    yield data
+
+    # === 【新增】测试后自动清理创建的角色 ===
+    def cleanup():
+        try:
+            db.execute("DELETE FROM sys_role WHERE role_key=%s", (role_key,))
+            logger.info(f"  清理测试角色: {role_key}")
+        except Exception as e:
+            logger.warning(f"  清理失败（可能已被删除）: {e}")
+
+    # 注册清理函数，确保即使断言失败也会执行
+    request.addfinalizer(cleanup)

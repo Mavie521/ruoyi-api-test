@@ -1,30 +1,46 @@
 """
-基础 API 封装 —— requests.Session 封装 + Token 自动管理
+基础 API 封装 —— requests.Session 封装 + Token 自动管理 + 超时重试
 
 核心功能:
 1. 自动从 config 加载 BASE_URL
 2. 提供 get/post/put/delete 通用方法（带日志 + Allure 步骤 + 自动附件）
-3. token 自动管理：set_token() 后后续请求自动携带
-4. 统一的响应日志和异常处理
-5. 每次请求自动 attach 到 Allure 报告（方便失败定位）
+3. Token 自动管理：set_token() 后后续请求自动携带
+4. 【新增】统一超时（15s）+ 失败自动重试 1 次（网络波动容错）
+5. 【新增】空响应/异常响应容错（避免 500 时程序崩溃）
 """
 import json as json_lib
+import time
 import allure
 import requests
 from requests import Response
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from config.config import BASE_URL, DEFAULT_TIMEOUT
 from utils.logger import logger
 from utils.allure_utils import attach_request, attach_response
 
 
 class BaseApi:
-    """所有 API 对象的基类，封装请求发送、token 管理、日志"""
+    """所有 API 对象的基类，封装请求发送、token 管理、日志、重试"""
 
     def __init__(self):
         self.session = requests.Session()
         self.base_url = BASE_URL.rstrip("/")
         self._token = None
-        self._last_response = None  # 保留最后响应，用于失败时 attach
+        self._last_response = None
+        # === 【新增】统一超时配置（15s，避免接口卡死） ===
+        self.timeout = DEFAULT_TIMEOUT
+
+        # === 【新增】requests 自动重试（最多重试 1 次，间隔 1s） ===
+        retry_strategy = Retry(
+            total=1,                        # 总重试次数（排除首次）
+            backoff_factor=1,               # 重试间隔 1s
+            status_forcelist=[500, 502, 503, 504],  # 服务端错误才重试
+            allowed_methods=["GET", "POST", "PUT", "DELETE"],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
 
     # ---------------------------------------------------------
     # Token 管理
@@ -45,7 +61,7 @@ class BaseApi:
         self.session.headers.pop("Authorization", None)
 
     # ---------------------------------------------------------
-    # 通用请求方法（每个方法都带 Allure 步骤 + 日志 + 附件）
+    # 通用请求方法
     # ---------------------------------------------------------
     def _log_request(self, method: str, url: str, **kwargs):
         """记录请求日志"""
@@ -74,32 +90,50 @@ class BaseApi:
     @allure.step("{method} {url}")
     def request(self, method: str, url: str, **kwargs) -> Response:
         """
-        通用请求方法，所有 API 请求最终都经过此方法
+        通用请求方法
         - url: 完整 URL 或相对路径（自动拼接 base_url）
-        - 自动注入 token（如果已设置）
-        - 统一日志 + Allure 附件 + 异常处理
+        - 【新增】超时 + 重试 + 异常响应容错
         """
         if not url.startswith("http"):
             url = f"{self.base_url}{url}"
 
-        kwargs.setdefault("timeout", DEFAULT_TIMEOUT)
+        # === 【新增】统一超时设置 ===
+        kwargs.setdefault("timeout", self.timeout)
 
         # Attach 请求到 Allure
         attach_request(method, url, headers=self.session.headers, **kwargs)
-
         self._log_request(method, url, **kwargs)
 
         try:
+            # === 【优化】带重试的请求 ===
             res = self.session.request(method, url, **kwargs)
             self._last_response = res
             self._log_response(res)
-            # Attach 响应到 Allure
             attach_response(res)
             return res
+
+        except requests.exceptions.ConnectionError as e:
+            # === 【新增】连接失败容错：记录到 Allure 但不崩溃 ===
+            logger.error(f"连接失败: {method} {url} - {e}")
+            allure.attach(str(e), name=" 连接异常", attachment_type=allure.attachment_type.TEXT)
+            # 返回一个模拟的 503 Response，避免调用方崩
+            mock_res = Response()
+            mock_res.status_code = 503
+            mock_res._content = b'{"code":500,"msg":"Connection refused"}'
+            return mock_res
+
+        except requests.Timeout as e:
+            logger.error(f"请求超时: {method} {url} - {e}")
+            allure.attach(str(e), name=" 超时异常", attachment_type=allure.attachment_type.TEXT)
+            mock_res = Response()
+            mock_res.status_code = 504
+            mock_res._content = b'{"code":500,"msg":"Timeout"}'
+            return mock_res
+
         except requests.RequestException as e:
             logger.error(f"请求异常: {method} {url} - {e}")
             allure.attach(str(e), name=" 请求异常", attachment_type=allure.attachment_type.TEXT)
-            raise
+            raise   # 未知异常往上抛
 
     def get(self, url: str, **kwargs) -> Response:
         return self.request("GET", url, **kwargs)
