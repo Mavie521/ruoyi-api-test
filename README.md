@@ -309,40 +309,39 @@ docker compose --profile report run --rm allure-reporter
 
 ## CI/CD 集成
 
-### Jenkins 流水线
+### Jenkins 流水线（已落地）
 
-Jenkinsfile 支持两种运行模式：
+Jenkins 容器已部署上线，完整 CI/CD 流程已在 Rocky Linux 9 上跑通：
 
-| 模式 | 说明 | 适用场景 |
-|------|------|---------|
-| direct | 主机直接执行 pytest | 本地开发环境 |
-| docker | 通过 docker compose 启动完整环境 | Linux 服务器 |
+```
+GitHub push → Jenkins 自动拉取 → Docker Compose 部署环境
+    → 等待后端就绪（轮询 8080） → 执行 pytest → Allure 报告展示
+```
+
+**核心 Pipeline 脚本：**
 
 ```groovy
 pipeline {
     agent any
-    parameters {
-        choice(name: 'RUN_MODE', choices: ['direct', 'docker'])
-        choice(name: 'ENV', choices: ['dev', 'staging', 'prod', 'docker'])
-        string(name: 'MARKER', defaultValue: 'p0')
-    }
     stages {
-        stage('Checkout') {
-            steps { git 'https://github.com/Mavie521/ruoyi-api-test.git' }
+        stage('全流程') {
+            steps {
+                sh 'bash /app/ruoyi-api-test/scripts/run_all.sh'
+            }
         }
-        stage('Docker Deploy') {
-            when { expression { params.RUN_MODE == 'docker' } }
-            steps { sh 'docker compose up -d' }
-        }
-        stage('Test') {
-            steps { sh 'pytest tests/ -m ${MARKER} --alluredir=./reports/allure-results' }
-        }
-        stage('Report') {
-            steps { allure results: [[path: 'reports/allure-results']] }
+        stage('Allure 报告') {
+            steps {
+                sh 'cp -r /app/ruoyi-api-test/reports/allure-results \${WORKSPACE}/allure-results'
+                allure includeProperties: true, results: [[path: 'allure-results']]
+            }
         }
     }
 }
 ```
+
+**访问地址：**
+- Jenkins: `http://192.168.159.128:8081`
+- Allure 报告: Jenkins 任务页面内置显示
 
 ### GitHub Actions
 

@@ -119,8 +119,7 @@ services:
     profiles:
       - test
     depends_on:
-      ruoyi-api:
-        condition: service_healthy
+      - ruoyi-api
     environment:
       BASE_URL: http://ruoyi-api:8080
       ENV: docker
