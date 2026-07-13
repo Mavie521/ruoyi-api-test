@@ -13,7 +13,7 @@ class HttpAssert:
     """HTTP 响应断言器"""
 
     @staticmethod
-    @allure.step("断言: 状态码")
+    @allure.step("验证 HTTP 状态码为 {expected}")
     def status_code(res: requests.Response, expected: int = 200):
         """断言 HTTP 状态码"""
         actual = res.status_code
@@ -22,7 +22,7 @@ class HttpAssert:
         logger.info(f" 状态码断言通过: {actual}")
 
     @staticmethod
-    @allure.step("断言: 响应成功标志")
+    @allure.step("验证接口返回成功标志 success=True")
     def success(res: requests.Response):
         """断言若依响应的 success 字段为 True"""
         body = res.json()
@@ -31,7 +31,7 @@ class HttpAssert:
         logger.info(f" success=True, msg={body.get('msg', '')}")
 
     @staticmethod
-    @allure.step("断言: 响应 code")
+    @allure.step("验证响应 code 等于 {expected}")
     def code(res: requests.Response, expected: int = 200):
         """断言响应中的 code 字段"""
         actual = res.json().get("code")
@@ -40,7 +40,7 @@ class HttpAssert:
         logger.info(f" code 断言通过: {actual}")
 
     @staticmethod
-    @allure.step("断言: JSONPath 精确匹配")
+    @allure.step("验证 JSONPath 表达式 '{jsonpath_expr}' 预期值等于 {expected}")
     def jsonpath_match(res: requests.Response, jsonpath_expr: str, expected):
         """
         JSONPath 精确断言
@@ -54,7 +54,7 @@ class HttpAssert:
         logger.info(f" JSONPath断言通过: {jsonpath_expr} == {expected}")
 
     @staticmethod
-    @allure.step("断言: 响应包含文本")
+    @allure.step("验证响应体中包含文本 '{text}'")
     def contains(res: requests.Response, text: str):
         """断言响应体包含指定文本"""
         assert text in res.text, \
@@ -62,7 +62,7 @@ class HttpAssert:
         logger.info(f" 包含断言通过: 包含 '{text}'")
 
     @staticmethod
-    @allure.step("断言: 列表不为空")
+    @allure.step("验证列表数据不为空")
     def list_not_empty(res: requests.Response, jsonpath_expr: str = "$.rows"):
         """断言列表数据不为空"""
         actual_list = jsonpath.jsonpath(res.json(), jsonpath_expr)
@@ -72,7 +72,7 @@ class HttpAssert:
         logger.info(f" 列表不为空: {jsonpath_expr} ({len(actual_list[0])}条)")
 
     @staticmethod
-    @allure.step("断言: 字段包含预期值")
+    @allure.step("验证字段值中包含预期文本 '{expected}'")
     def field_contains(res: requests.Response, jsonpath_expr: str, expected: str):
         """断言某个字段值包含预期文本"""
         actual_list = jsonpath.jsonpath(res.json(), jsonpath_expr)
