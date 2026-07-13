@@ -95,18 +95,22 @@ services:
   # 如果需要看前端页面，取消注释即可
   # =============================================
   # ruoyi-web:
-  #   image: nginx:alpine
-  #   container_name: ry-web
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - ruoyi-api
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-  #     - ./docker/nginx/html:/usr/share/nginx/html
-  #   networks:
-  #     - ry-network
+  # =============================================
+  # 若依前端 (Nginx) — 浏览器访问若依页面
+  # =============================================
+  ruoyi-web:
+    image: nginx:alpine
+    container_name: ry-web
+    restart: unless-stopped
+    depends_on:
+      - ruoyi-api
+    ports:
+      - "89:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/nginx/html:/usr/share/nginx/html
+    networks:
+      - ry-network
 
   # =============================================
   # 测试执行器 (pytest)
