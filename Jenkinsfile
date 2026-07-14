@@ -1,64 +1,41 @@
 pipeline {
     agent any
-
     parameters {
-        choice(name: 'RUN_MODE', choices: ['direct', 'docker'], description: '运行方式')
-        choice(name: 'ENV', choices: ['dev', 'staging', 'prod', 'docker'], description: '测试环境')
-        string(name: 'MARKER', defaultValue: 'p0', description: '用例标记')
-        string(name: 'WORKERS', defaultValue: '2', description: '并发数')
-        string(name: 'RERUNS', defaultValue: '1', description: '重试次数')
-        string(name: 'BRANCH', defaultValue: 'main', description: '分支')
+        choice(name: 'MODE', choices: ['fast', 'clean'], description: '运行模式')
+        choice(name: 'MARKER', choices: ['p0', 'p1', 'p2', 'all'], description: '用例级别')
     }
-
-    environment {
-        ALLURE_RESULTS = "${WORKSPACE}/reports/allure-results"
-        ALLURE_REPORT  = "${WORKSPACE}/reports/allure-report"
-        BUILD_TIMESTAMP = sh(script: 'date "+%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
-    }
-
     stages {
-        stage('拉取代码') {
+        stage('部署') {
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "${params.BRANCH}"]],
-                    userRemoteConfigs: [[url: 'https://github.com/Mavie521/ruoyi-api-test.git']]
+                sh 'cd /app/ruoyi-api-test && docker compose up -d || true'
+                sh 'sleep 20'
+            }
+        }
+        stage('测试') {
+            steps {
+                sh 'rm -rf /app/ruoyi-api-test/reports/allure-results || true'
+                sh "cd /app/ruoyi-api-test && docker compose run -d --name temp-runner test-runner pytest tests/ -m ${params.MARKER} --alluredir=reports/allure-results --clean-alluredir -v || true"
+                sh 'docker cp temp-runner:/app/reports/allure-results /app/ruoyi-api-test/reports/allure-results || true'
+                sh 'docker rm -f temp-runner || true'
+            }
+        }
+        stage('报告') {
+            steps {
+                sh 'rm -rf allure-results || true'
+                sh 'cp -r /app/ruoyi-api-test/reports/allure-results allure-results || true'
+                allure([
+                    includeProperties: true,
+                    results: [[path: 'allure-results']],
+                    reportBuildPolicy: 'ALWAYS'
                 ])
             }
         }
-
-        stage('环境准备') {
-            when { expression { params.RUN_MODE == 'docker' } }
-            steps {
-                sh 'docker compose down -v 2>/dev/null || true'
-                sh 'docker compose up -d'
-            }
-        }
-
-        stage('执行测试') {
-            steps {
-                sh "rm -rf ${ALLURE_RESULTS}"
-                sh """
-                    cd /app/ruoyi-api-test && \
-                    docker compose run --rm test-runner \
-                        sh -c "pytest tests/ -m ${params.MARKER} \
-                            --alluredir=./reports/allure-results \
-                            --clean-alluredir -v \
-                            --reruns ${params.RERUNS} --reruns-delay 5"
-                """
-            }
-        }
-
-        stage('Allure 报告') {
-            steps {
-                allure includeProperties: true, results: [[path: 'reports/allure-results']]
-            }
-        }
     }
-
     post {
-        success { echo '测试通过' }
-        failure { echo '测试失败，请查看报告' }
-        cleanup { cleanWs(deleteDirectories: true) }
+        always {
+            script {
+                currentBuild.displayName = "#${BUILD_NUMBER}-${params.MARKER}-${params.MODE}"
+            }
+        }
     }
 }

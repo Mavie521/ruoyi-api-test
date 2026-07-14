@@ -1,18 +1,10 @@
 # =============================================
 # RuoYi API Test Framework — Docker 部署
 # 一条命令启动完整测试环境
-#
-# 用法:
-#   docker compose up -d                # 启动所有服务
-#   docker compose up test-runner       # 单独跑测试
-#   docker compose down -v              # 停止并清除数据
 # =============================================
 
 services:
 
-  # =============================================
-  # MySQL 8.0
-  # =============================================
   mysql:
     image: mysql:8.0
     container_name: ry-mysql
@@ -35,9 +27,6 @@ services:
     networks:
       - ry-network
 
-  # =============================================
-  # Redis 7
-  # =============================================
   redis:
     image: redis:7-alpine
     container_name: ry-redis
@@ -54,10 +43,6 @@ services:
     networks:
       - ry-network
 
-  # =============================================
-  # RuoYi 后端 v3.9.2
-  # 多阶段构建：自动从源码编译，无需你手动打包
-  # =============================================
   ruoyi-api:
     build:
       context: ./docker/ruoyi
@@ -72,16 +57,13 @@ services:
       redis:
         condition: service_healthy
     environment:
-      # ===== SPRING_APPLICATION_JSON（优先级最高，一定生效） =====
       SPRING_APPLICATION_JSON: '{"spring":{"data":{"redis":{"host":"redis","port":6379}},"datasource":{"druid":{"master":{"url":"jdbc:mysql://mysql:3306/ry-vue?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true","username":"root","password":"root"}}},"server":{"port":8080}}}'
-      # ===== 若依应用配置 =====
       RUOYI_NAME: RuoYi
       RUOYI_VERSION: 3.9.2
       RUOYI_PROFILE: /home/ruoyi/uploadPath
     ports:
       - "8080:8080"
     healthcheck:
-      # 检查端口是否在监听（不关心 HTTP 状态码）
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/ >/dev/null 2>&1 || curl -sf http://localhost:8080/login >/dev/null 2>&1 || exit 1"]
       interval: 15s
       timeout: 10s
@@ -90,31 +72,8 @@ services:
     networks:
       - ry-network
 
-  # =============================================
-  # 若依前端 (Nginx) — 可选，跑接口测试不需要
-  # 如果需要看前端页面，取消注释即可
-  # =============================================
-  # ruoyi-web:
-  # =============================================
-  # 若依前端 (Nginx) — 浏览器访问若依页面
-  # =============================================
-  ruoyi-web:
-    image: nginx:alpine
-    container_name: ry-web
-    restart: unless-stopped
-    depends_on:
-      - ruoyi-api
-    ports:
-      - "89:80"
-    volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-      - ./docker/nginx/html:/usr/share/nginx/html
-    networks:
-      - ry-network
+  # ruoyi-web commented out
 
-  # =============================================
-  # 测试执行器 (pytest)
-  # =============================================
   test-runner:
     build:
       context: .
@@ -135,18 +94,14 @@ services:
     volumes:
       - ./reports:/app/reports
       - ./logs:/app/logs
-    command: sh -c "pytest tests/ -m p0 --alluredir=./reports/allure-results --clean-alluredir -v --reruns 1 --reruns-delay 5"
     networks:
       - ry-network
 
-  # =============================================
-  # Allure 报告生成器（Docker 容器化，免安装）
-  # =============================================
   allure-reporter:
     build:
       context: ./docker/allure
       dockerfile: Dockerfile
-    container_name: ry-allure-reporter
+    container_name: ry-allure-gen
     profiles:
       - report
     volumes:
@@ -156,12 +111,9 @@ services:
     networks:
       - ry-network
 
-  # =============================================
-  # Nginx 报告托管（长期稳定访问）
-  # 浏览器访问 http://192.168.159.128:8088
-  # =============================================
   allure-report:
     image: nginx:alpine
+    user: "0:0"
     container_name: ry-allure-report
     restart: unless-stopped
     ports:
@@ -171,16 +123,10 @@ services:
     networks:
       - ry-network
 
-# =============================================
-# 持久化卷
-# =============================================
 volumes:
   mysql_data:
   redis_data:
 
-# =============================================
-# 网络
-# =============================================
 networks:
   ry-network:
     driver: bridge
