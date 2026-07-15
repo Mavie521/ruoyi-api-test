@@ -119,7 +119,7 @@ class DbClient:
     # ---------------------------------------------------------
     @allure.step("数据库断言: 值相等")
     def assert_value(self, sql: str, expected, params: tuple = None,
-                     column: str = None, msg: str = None):
+                     column: str = None):
         """
         断言数据库中的某个字段值等于预期
         - sql: 查询语句
@@ -137,7 +137,7 @@ class DbClient:
             actual = list(result.values())[0] if result else None
 
         assert actual == expected, (
-            f" 数据库断言失败: 值不匹配\n"
+            " 数据库断言失败: 值不匹配\n"
             f"  SQL: {sql}\n"
             f"  参数: {params}\n"
             f"  字段: {column or '(自动取第一个字段)'}\n"

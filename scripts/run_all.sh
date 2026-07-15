@@ -9,19 +9,20 @@ cd "$PROJECT_DIR"
 REPORT_DIR="$PROJECT_DIR/reports"
 ALLURE_DIR="$REPORT_DIR/allure-results"
 
-# 显式启动带 profile 的服务（test-runner、ruoyi-api、mysql 等）
+# 启动后端服务（不带 test profile，避免 test-runner 作为 daemon 启动）
 if [ "$MODE" = "clean" ]; then
-  docker compose --profile test down 2>/dev/null
-  docker compose --profile test up -d
+  docker compose down 2>/dev/null
+  docker compose up -d
 else
-  docker compose --profile test up -d 2>/dev/null
+  docker compose up -d 2>/dev/null
 fi
+# test-runner 用 run 创建临时容器（需要 --profile test）
 docker compose --profile test run --rm test-runner bash /app/scripts/wait_for_api.sh
 
 if [ "$MARKER" = "all" ]; then
-  docker compose --profile test run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ --alluredir=/app/reports/temp-allure -v --reruns 1; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
+  docker compose --profile test run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ testcases/test_excel_driver.py --alluredir=/app/reports/temp-allure -v --reruns 1; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
 else
-  docker compose --profile test run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ -m $MARKER --alluredir=/app/reports/temp-allure -v --reruns 1; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
+  docker compose --profile test run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ testcases/test_excel_driver.py -m $MARKER --alluredir=/app/reports/temp-allure -v --reruns 1; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
 fi
 
 EXIT_CODE=$?

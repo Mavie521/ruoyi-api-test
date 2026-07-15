@@ -1,0 +1,71 @@
+# =============================================
+# RuoYi API Test Framework — pylint 配置
+# 评分目标: 9.0+
+# =============================================
+[MASTER]
+# 忽略虚拟环境和测试缓存
+ignore=.venv,venv,__pycache__,.git
+# 要检查的目录
+init-hook="import sys; sys.path.insert(0, '.')"
+
+[MESSAGES CONTROL]
+# 禁用以下告警（非代码质量问题）
+disable=
+    # 无法导入：运行环境在 Docker 中有这些依赖
+    import-error,
+    # fixture 参数 pytest 自动注入，无需手动调用
+    # conftest.py 的 fixture 参数名重复不算问题
+    redefined-outer-name,
+    # requests.Response 的 _content 访问已知风险但可接受
+    protected-access,
+    # 行尾换行符（Windows CRLF vs Linux LF，不影响代码质量）
+    unexpected-line-ending-format,
+    # str+Enum 基类导致 pylint 无法识别枚举成员
+    no-member,
+    # 测试类中业务流程测试只有一个长方法
+    too-few-public-methods,
+    # 测试数据构造代码相似（业务流测试需要独立的数据）
+    duplicate-code,
+
+[FORMAT]
+# 行宽 120，跟 black 对齐
+max-line-length=120
+
+# 期望单行 1 个 import
+expected-line-ending-format=LF
+
+[BASIC]
+# 允许 test_ 开头的函数名（pytest 约定）
+good-names=i,j,k,ex,Run,_,pk,db,api,resp,token,row,rows,data,case,res,f,fn
+
+# 允许的模块命名模式
+module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
+
+# 允许的类命名模式
+class-rgx=[A-Z][a-zA-Z0-9]+$
+
+# 允许的函数命名模式
+function-rgx=(([a-z_][a-z0-9_]*)|(test_[a-z0-9_]+))$
+
+# 允许的方法命名模式
+method-rgx=(([a-z_][a-z0-9_]*)|(test_[a-z0-9_]+)|(setUp|tearDown))$
+
+[DESIGN]
+# 最大父类数量
+max-parents=7
+# 函数最大参数数
+max-args=8
+# 最大局部变量数
+max-locals=20
+# 最大返回值数
+max-returns=6
+# 函数最大代码行数
+max-statements=60
+# 函数最大分支数
+max-branches=12
+
+[IMPORTS]
+# 标准库模块顺序
+known-standard-library=typing,time,json,sys,os,pathlib
+# 第三方库
+known-third-party=allure,pytest,requests,loguru,jinja2,openpyxl,mysql,jsonpath

@@ -15,6 +15,7 @@ assertions = HttpAssert()
 @allure.epic("若依接口测试")
 @allure.feature("安全测试")
 class TestSecurity:
+    """安全测试：SQL注入 / XSS / 越权 / 边界异常"""
 
     @allure.story("SQL 注入")
     @allure.title("登录接口 SQL 注入 — 多种注入 payload")

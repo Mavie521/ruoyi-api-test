@@ -1,0 +1,27 @@
+# =============================================
+# RuoYi API Test Framework — pre-commit 配置
+# 提交代码前自动执行: 格式检查 → 静态分析 → 简单测试
+# 安装: pre-commit install
+# 手动运行: pre-commit run --all-files
+# =============================================
+
+repos:
+  # ── 通用检查 ──
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace        # 行尾空白
+      - id: end-of-file-fixer          # 文件末尾换行
+      - id: check-yaml                 # YAML 语法检查
+      - id: check-added-large-files    # 禁止提交大文件 (>500KB)
+        args: ["--maxkb=500"]
+      - id: check-merge-conflict       # 检查是否有合并冲突标记
+      - id: detect-private-key         # 防止泄漏私钥
+
+  # ── Python 自动格式化 ──
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=120]      # 行宽 120，跟项目现有风格一致

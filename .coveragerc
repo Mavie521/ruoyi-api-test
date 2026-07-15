@@ -1,0 +1,18 @@
+# =============================================
+# coverage 配置
+# =============================================
+[run]
+source = api, utils, config
+omit =
+    */test_*
+    */__pycache__/*
+    */.venv/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    logger.debug
+    logger.info

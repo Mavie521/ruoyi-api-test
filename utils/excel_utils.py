@@ -25,15 +25,16 @@ def read_excel(file_path: str = None, sheet_name: str = None) -> list[dict]:
     worksheet = workbook[sheet_name]
 
     # 第2行为表头（第1行可放注释）
-    headers = [cell.value for cell in worksheet[2]]
+    headers = [cell.value for cell in worksheet[1]]
 
     data = []
-    for row in worksheet.iter_rows(min_row=3, values_only=True):
+    for row in worksheet.iter_rows(min_row=2, values_only=True):
+        if not any(cell is not None for cell in row):
+            continue
         row_dict = dict(zip(headers, row))
-        # is_true 列控制是否执行
-        if row_dict.get("is_true") in (True, 1, "TRUE", "true", "True", "是"):
+        is_true = row_dict.get("is_true")
+        if is_true is True or str(is_true).upper() == "TRUE":
             data.append(row_dict)
-
     workbook.close()
     logger.info(f"从 Excel 加载 {len(data)} 条有效用例")
     return data

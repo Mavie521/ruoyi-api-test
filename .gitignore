@@ -38,6 +38,14 @@ logs/
 data/*.xlsx
 data/*.csv
 
+# 覆盖率
+htmlcov/
+.coverage
+coverage.xml
+
+# pre-commit
+.pre-commit-config.yaml.bak
+
 # 保留目录结构
 !reports/allure-results/.gitkeep
 !reports/.gitkeep

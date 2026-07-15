@@ -11,9 +11,17 @@
 """
 import os
 import sys
+from enum import Enum
 from pathlib import Path
 from dotenv import load_dotenv
-from enum import Enum
+
+# Python 3.11+ 使用 StrEnum 替代 str, Enum 混合
+try:
+    from enum import StrEnum as _StrEnum
+except ImportError:
+    import enum as _enum
+    class _StrEnum(str, _enum.Enum):
+        """Python < 3.11 兼容：str + Enum 混合"""
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,7 +29,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # =============================================
 # 多环境支持
 # =============================================
-class Env(str, Enum):
+class Env(_StrEnum):
+    """运行环境枚举：dev / staging / prod / docker"""
     DEV = "dev"
     STAGING = "staging"
     PROD = "prod"

@@ -29,7 +29,7 @@ jobs:
       - name: Check project structure
         run: |
           echo "=== 检查必要文件 ==="
-          for f in api/base_api.py api/login_api.py api/role_api.py api/system_user_api.py tests/test_login.py tests/test_business_flow.py tests/test_system_user.py tests/test_role.py utils/db_utils.py README.md requirements.txt; do
+          for f in api/base_api.py api/login_api.py api/role_api.py api/system_user_api.py tests/test_security.py tests/test_business_flow.py tests/test_system_user.py tests/test_role.py testcases/test_excel_driver.py Makefile requirements.txt requirements-dev.txt .pre-commit-config.yaml .coveragerc utils/db_utils.py README.md; do
             if [ -f "$f" ]; then
               echo "✅ $f"
             else

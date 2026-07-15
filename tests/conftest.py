@@ -6,11 +6,13 @@ API 测试专用 fixtures —— Token 管理 + 数据库 + 环境注入
         info = login_api.get_info()
         user = db.query_one("SELECT * FROM sys_user WHERE user_name=%s", ("admin",))
 """
+import time
+import mysql.connector
 import pytest
-from api import LoginApi, UserApi, RoleApi, SystemUserApi
 from config.config import ADMIN_USERNAME, ADMIN_PASSWORD
 from utils.logger import logger
 from utils.db_utils import DbClient
+from api import LoginApi, UserApi, RoleApi, SystemUserApi
 
 
 @pytest.fixture(scope="session")
@@ -23,7 +25,7 @@ def admin_login() -> LoginApi:
     api = LoginApi()
     token = api.login(ADMIN_USERNAME, ADMIN_PASSWORD)
     assert token, f"管理员登录失败！请检查 {ADMIN_USERNAME}@BASE_URL"
-    logger.info(f" 管理员登录成功，token 已获取")
+    logger.info(" 管理员登录成功，token 已获取")
     return api
 
 
@@ -75,23 +77,11 @@ def db():
 # ====================================================
 # 测试数据 fixtures
 # ====================================================
-@pytest.fixture
-def new_user_data() -> dict:
-    """生成新用户数据（/test/user/save 需要 userId）"""
-    import time
-    suffix = str(int(time.time() * 1000))[-6:]
-    return {
-        "userId": int(suffix) + 1000,  # 测试控制器需要手动传 userId
-        "username": f"testuser_{suffix}",
-        "password": "123456",
-        "mobile": f"138{suffix[:8].zfill(8)}",
-    }
 
 
 @pytest.fixture
 def new_real_user_data() -> dict:
     """生成真实用户数据（/system/user 需要 userName 等）"""
-    import time
     suffix = str(int(time.time() * 1000))[-6:]
     return {
         "userName": f"test_real_{suffix}",
@@ -114,7 +104,6 @@ def new_role_data(request, db) -> dict:
     生成新角色数据
     自动清理：用例结束后删除创建的角色（防止测试数据污染）
     """
-    import time
     suffix = str(int(time.time() * 1000))[-6:]
     role_key = f"test_role_{suffix}"
     data = {
@@ -133,7 +122,7 @@ def new_role_data(request, db) -> dict:
         try:
             db.execute("DELETE FROM sys_role WHERE role_key=%s", (role_key,))
             logger.info(f"  清理测试角色: {role_key}")
-        except Exception as e:
+        except mysql.connector.Error as e:
             logger.warning(f"  清理失败（可能已被删除）: {e}")
 
     # 注册清理函数，确保即使断言失败也会执行

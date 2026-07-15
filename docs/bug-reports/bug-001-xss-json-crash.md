@@ -50,6 +50,14 @@ Jackson JSON 解析器在处理包含 `<` 字符的请求体时抛出 `JsonParse
 
 所有 POST/PUT 接口中带 `<` 字符的字符串字段都可能触发此问题。
 
+## 最新状态 (2026-07-15)
+
+| 项目 | 值 |
+|------|----|
+| 最新构建结果 | **xpassed**（预期失败但实际通过） |
+| 说明 | 若依后续版本可能已修复此 Bug，`@pytest.mark.xfail` 标记的用例在 Jenkins #85 构建中显示 `1 xpassed` |
+| 建议 | 确认后端版本后，可将 `xfail` 标记改为普通断言 |
+
 ## 附件
 
 Allure 报告截图：/app/allure-report/#bug-001

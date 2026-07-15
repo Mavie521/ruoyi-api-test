@@ -1,34 +1,34 @@
 """
 Excel数据驱动核心引擎
 
-一条Excel用例的执行流程:
-  案例数据 → 模板渲染(替换{{变量}}) → 发HTTP请求 → 断言 → 提取变量
+三层架构：
+  HTTP请求层: method/path/headers/params/json/data/files
+  校验层:     check+expected(JSONPath) / sql_check+sql_expected(DB)
+  提取层:     jsonExData(响应) / sqlExData(数据库) → 后续用例复用
+
+一条Excel用例执行流程:
+  render_case({{TOKEN}}) → send_request() → do_assert() + do_db_assert() → do_extract()
 """
 import json
 import allure
 import requests
 import jsonpath
+import mysql.connector
 from jinja2 import Template
 from config.config import BASE_URL
 from utils.logger import logger
+from utils.db_utils import DbClient
 from utils.allure_utils import attach_request, attach_response
 
 
 def render_case(case: dict, global_vars: dict) -> dict:
-    """
-    用 Jinja2 渲染Excel用例中的 {{变量}}
-    比如 json={{"token": "{{TOKEN}}"}} → json={{"token": "eyJxxx..."}}
-    """
+    """Jinja2渲染 {{变量}}"""
     case_str = json.dumps(case, ensure_ascii=False)
-    rendered = Template(case_str).render(global_vars)
-    return json.loads(rendered)
+    return json.loads(Template(case_str).render(global_vars))
 
 
 def _parse_field(value):
-    """
-    把Excel中存成字符串的JSON字段转成Python对象
-    比如 '{"key": "val"}' → {"key": "val"}
-    """
+    """Excel 字符串JSON → Python对象"""
     if isinstance(value, str):
         value = value.strip()
         if value.startswith(("{", "[")):
@@ -41,68 +41,99 @@ def _parse_field(value):
 
 def send_request(case: dict) -> requests.Response:
     """
-    根据Excel用例数据发HTTP请求
-    支持: method, path, headers, params, json, data
-    自动解析Excel中存为字符串的JSON字段
+    发送HTTP请求
+    支持: method/path/headers/params/json/data/files
     """
     url = BASE_URL.rstrip("/") + case.get("path", "")
-
-    # 解析JSON字符串字段 → Python对象
     headers = _parse_field(case.get("headers"))
     params = _parse_field(case.get("params"))
     json_body = _parse_field(case.get("json"))
     form_data = _parse_field(case.get("data"))
-
+    files = _parse_field(case.get("files"))
     method = case.get("method", "get").lower()
 
+    kwargs = {"headers": headers, "params": params, "timeout": 10}
+    if json_body:
+        kwargs["json"] = json_body
+    if form_data:
+        kwargs["data"] = form_data
+    if files:
+        kwargs["files"] = files
+
     logger.info(f"请求: {method.upper()} {url}")
-    res = requests.request(
-        method=method, url=url,
-        headers=headers, params=params,
-        json=json_body, data=form_data,
-        timeout=10,
-    )
+    res = requests.request(method, url, **kwargs)
+    attach_request(method, url, headers=headers, params=params, json=json_body, data=form_data)
+    attach_response(res)
     return res
 
 
+@allure.step("HTTP响应断言")
 def do_assert(case: dict, res: requests.Response):
-    """
-    断言:
-    - check 有值 → JSONPath精确断言
-    - check 无值 → 文本包含断言
-    """
+    """JSONPath断言 / 包含断言"""
     check = case.get("check")
     expected = str(case.get("expected", ""))
-
     if check:
-        # JSONPath精确断言: check="$..code" expected="200"
         actual_list = jsonpath.jsonpath(res.json(), check)
         assert actual_list is not False, f"JSONPath未匹配: {check}"
         actual = str(actual_list[0])
-        assert actual == expected, \
-            f"JSONPath断言失败: {check} 预期={expected} 实际={actual}"
+        assert actual == expected, f"JSONPath断言失败: {check} 预期={expected} 实际={actual}"
         logger.info(f"   JSONPath断言通过: {check} == {expected}")
     else:
-        # 包含断言: expected在响应文本中即可
-        assert expected in res.text, \
-            f"包含断言失败: 未找到'{expected}'"
-        logger.info(f"   包含断言通过: 响应包含'{expected}'")
+        assert expected in res.text, f"包含断言失败: 未找到'{expected}'"
+        logger.info("   包含断言通过")
+
+
+@allure.step("数据库断言")
+def do_db_assert(case: dict):
+    """sql_check + sql_expected 数据库落盘校验"""
+    sql = case.get("sql_check")
+    expected = case.get("sql_expected")
+    if not sql:
+        return
+    db = DbClient()
+    try:
+        result = db.query_one(sql)
+        assert result is not None, f"数据库查询无结果: {sql}"
+        actual = str(list(result.values())[0])
+        assert actual == str(expected), f"数据库断言失败: 预期={expected} 实际={actual}"
+        logger.info(f"   数据库断言通过: {actual} == {expected}")
+    finally:
+        db.close()
 
 
 def do_extract(case: dict, res: requests.Response, global_vars: dict):
     """
-    从响应中提取值到全局变量，供后续用例使用
-    Excel字段 jsonExData = {"TOKEN": "$..token"}
+    提取变量到全局变量供后续用例复用
+    - jsonExData: 从响应JSON提取 {"VAR_NAME": "$..jsonpath"}
+    - sqlExData:  从数据库提取   {"VAR_NAME": "SELECT ..."}
     """
-    ex_data = case.get("jsonExData")
-    if not ex_data:
-        return
+    db = DbClient() if case.get("sqlExData") else None
 
-    if isinstance(ex_data, str):
-        ex_data = json.loads(ex_data)
+    # jsonExData: 从响应提取
+    ex_json = case.get("jsonExData")
+    if isinstance(ex_json, str):
+        ex_json = json.loads(ex_json)
+    if ex_json:
+        for var_name, jp_expr in ex_json.items():
+            vals = jsonpath.jsonpath(res.json(), jp_expr)
+            if vals:
+                global_vars[var_name] = vals[0]
+                logger.info(f"   提取(JSON): {var_name} = {vals[0]}")
 
-    for var_name, jsonpath_expr in ex_data.items():
-        actual_list = jsonpath.jsonpath(res.json(), jsonpath_expr)
-        if actual_list:
-            global_vars[var_name] = actual_list[0]
-            logger.info(f"   提取: {var_name} = {actual_list[0]}")
+    # sqlExData: 从数据库提取
+    ex_sql = case.get("sqlExData")
+    if isinstance(ex_sql, str):
+        ex_sql = json.loads(ex_sql)
+    if ex_sql:
+        for var_name, sql in ex_sql.items():
+            try:
+                row = db.query_one(sql)
+                if row:
+                    val = list(row.values())[0]
+                    global_vars[var_name] = val
+                    logger.info(f"   提取(SQL): {var_name} = {val}")
+            except (ValueError, TypeError, mysql.connector.Error) as e:
+                logger.warning(f"   SQL提取失败: {var_name} - {e}")
+
+    if db:
+        db.close()

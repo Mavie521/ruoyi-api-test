@@ -71,6 +71,43 @@
 
 | 风险 | 概率 | 应对 |
 |------|------|------|
-| 容器网络延迟导致超时 | 高 | wait_for_api.sh 轮询25次×4s |
-| 数据库脏数据 | 中 | fast/clean 双模式 |
-| 国内网络被墙 | 中 | 阿里云镜像 + 本地编译JAR |
+| 容器网络延迟导致超时 | 高 | `wait_for_api.sh` POST 验证 token（40次×5s=200s超时） |
+| 数据库脏数据 | 中 | fast/clean 双模式；fixture finalizer 自动清理 |
+| 国内网络被墙 | 中 | 阿里云镜像 + 本地编译 JAR |
+| Docker Compose profile 不匹配 | 低 | 所有 `docker compose run` 显式加 `--profile test` |
+| 宿主机空目录覆盖镜像文件 | 低 | volume mount 只挂需要热更新的目录（tests/reports），testcases 直接用镜像内文件 |
+
+## 6. Docker 运维补充
+
+### 6.1 Key 命令
+
+```bash
+# 重建镜像（代码变更后）
+docker compose build test-runner
+
+# 清理重建环境
+docker compose down -v && docker compose up -d
+
+# 进入容器调试
+docker compose --profile test run --rm test-runner bash
+
+# 查看所有容器状态
+docker compose ps
+```
+
+### 6.2 调试技巧
+
+```bash
+# 直接在容器内跑 pytest 诊断
+docker compose --profile test run --rm test-runner \
+  pytest tests/ --collect-only -v
+
+# 验证 API 是否就绪
+docker compose --profile test run --rm test-runner \
+  curl -s -X POST http://ruoyi-api:8080/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# 查看测试日志
+tail -f logs/ruoyi_api_*.log
+```

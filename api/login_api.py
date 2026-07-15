@@ -3,9 +3,9 @@
 对应接口文档: sys-login-controller
 """
 import allure
-from .base_api import BaseApi
 from config.config import ADMIN_USERNAME as DEFAULT_USER, ADMIN_PASSWORD as DEFAULT_PWD
 from utils.logger import logger
+from .base_api import BaseApi
 
 
 class LoginApi(BaseApi):

@@ -3,7 +3,6 @@
 对应接口文档: 用户信息管理 (/test/user/*)
 """
 import allure
-from typing import Optional
 from .base_api import BaseApi
 
 

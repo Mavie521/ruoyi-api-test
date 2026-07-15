@@ -2,6 +2,7 @@
 角色管理模块测试用例
 覆盖: 角色 CRUD、状态切换、数据库断言、下拉选项、数据权限等
 """
+import time
 import allure
 import pytest
 from utils.assertions import HttpAssert
@@ -12,6 +13,7 @@ assertions = HttpAssert()
 @allure.epic("若依接口测试")
 @allure.feature("角色管理模块")
 class TestRole:
+    """角色管理模块：CRUD + 状态切换 + 选项/树/用户列表"""
 
     # ---------------------------------------------------------
     # P0 · 查询类
@@ -19,7 +21,6 @@ class TestRole:
     @allure.story("角色查询")
     @allure.title("查询角色列表 - 正常返回分页数据")
     @allure.severity(allure.severity_level.BLOCKER)
-    @pytest.mark.smoke
     @pytest.mark.p0
     def test_list_roles(self, role_api):
         """查询角色列表"""
@@ -32,7 +33,6 @@ class TestRole:
     @allure.story("角色查询")
     @allure.title("获取角色详情")
     @allure.severity(allure.severity_level.CRITICAL)
-    @pytest.mark.smoke
     @pytest.mark.p0
     def test_get_role_detail(self, role_api):
         """获取第一个角色的详情"""
@@ -51,7 +51,6 @@ class TestRole:
     @allure.story("角色新增")
     @allure.title("新增角色 - 正常创建成功 + 数据库验证")
     @allure.severity(allure.severity_level.CRITICAL)
-    @pytest.mark.smoke
     @pytest.mark.p0
     def test_create_role(self, role_api, new_role_data, db):
         """创建新角色，并验证数据库"""
@@ -68,7 +67,6 @@ class TestRole:
     @allure.story("角色修改")
     @allure.title("编辑角色信息 + 数据库验证")
     @allure.severity(allure.severity_level.CRITICAL)
-    @pytest.mark.smoke
     @pytest.mark.p0
     def test_update_role(self, role_api, new_role_data, db):
         """先创建角色，再编辑，并验证数据库已更新"""
@@ -109,7 +107,6 @@ class TestRole:
     @allure.story("角色删除")
     @allure.title("删除角色 + 数据库验证")
     @allure.severity(allure.severity_level.CRITICAL)
-    @pytest.mark.smoke
     @pytest.mark.p0
     def test_delete_role(self, role_api, new_role_data, db):
         """先创建角色，再删除，并验证数据库 del_flag='2'"""
@@ -175,7 +172,6 @@ class TestRole:
     @pytest.mark.p1
     def test_create_role_missing_required(self, role_api):
         """缺少必填字段 roleName"""
-        import time
         suffix = str(int(time.time() * 1000))[-6:]
         invalid_data = {
             "roleKey": f"test_missing_{suffix}",

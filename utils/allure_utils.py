@@ -57,7 +57,7 @@ def attach_response(res: requests.Response):
     try:
         body = res.json()
         body_str = _pretty_json(body)
-    except Exception:
+    except (ValueError, TypeError, json.JSONDecodeError):
         body_str = res.text[:2000]
 
     text = (
@@ -87,5 +87,5 @@ def _pretty_json(data) -> str:
             return data[:1000]
     try:
         return json.dumps(data, ensure_ascii=False, indent=2)[:2000]
-    except Exception:
+    except (ValueError, TypeError, OverflowError):
         return str(data)[:2000]

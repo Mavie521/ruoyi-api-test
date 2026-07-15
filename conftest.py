@@ -24,7 +24,7 @@ def allure_environment():
         f.write(f"BaseURL={BASE_URL}\n")
         f.write(f"Environment={ACTIVE_ENV.value}\n")
         f.write(f"Python={sys.version.split()[0]}\n")
-        f.write(f"测试框架=若依接口测试框架 v1.1\n")
+        f.write("测试框架=若依接口测试框架 v1.1\n")
         f.write(f"测试时间={datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
         f.write(f"操作系统={sys.platform}\n")
 

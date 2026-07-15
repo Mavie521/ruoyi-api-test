@@ -4,8 +4,9 @@
 真实接口: /system/user/**
 操作数据库: sys_user 表
 """
-import allure
+import time
 from typing import Optional
+import allure
 from .base_api import BaseApi
 
 
@@ -82,27 +83,21 @@ class SystemUserApi(BaseApi):
     @staticmethod
     def build_user_data(
         username: str,
-        nick_name: str = None,
         password: str = "123456",
-        dept_id: int = 103,
-        email: str = None,
-        phone: str = None,
-        sex: str = "0",
-        status: str = "0",
         user_id: Optional[int] = None,
+        **extra,
     ) -> dict:
-        """构造用户数据"""
-        import time
+        """构造用户数据，默认生成带时间戳的用户信息"""
         suffix = str(int(time.time() * 1000))[-6:]
         data = {
             "userName": username,
-            "nickName": nick_name or f"用户_{suffix}",
+            "nickName": extra.get("nick_name") or f"用户_{suffix}",
             "password": password,
-            "deptId": dept_id,
-            "email": email or f"{username}@ruoyi.com",
-            "phonenumber": phone or f"138{suffix[:8].zfill(8)}",
-            "sex": sex,
-            "status": status,
+            "deptId": extra.get("dept_id", 103),
+            "email": extra.get("email") or f"{username}@ruoyi.com",
+            "phonenumber": extra.get("phone") or f"138{suffix[:8].zfill(8)}",
+            "sex": extra.get("sex", "0"),
+            "status": extra.get("status", "0"),
             "postIds": [],
             "roleIds": [],
             "remark": "由接口测试框架创建",

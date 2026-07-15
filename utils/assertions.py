@@ -2,7 +2,6 @@
 断言工具 —— 封装常用响应断言
 支持状态码、JSONPath、包含、数据库等断言方式
 """
-import json
 import allure
 import jsonpath
 import requests

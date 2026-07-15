@@ -9,7 +9,6 @@
 5. 【新增】空响应/异常响应容错（避免 500 时程序崩溃）
 """
 import json as json_lib
-import time
 import allure
 import requests
 from requests import Response
@@ -47,6 +46,7 @@ class BaseApi:
     # ---------------------------------------------------------
     @property
     def token(self) -> str:
+        """获取当前 token"""
         return self._token
 
     def set_token(self, token: str):
@@ -79,11 +79,11 @@ class BaseApi:
         logger.debug(f"请求详情: {json_lib.dumps(log_data, ensure_ascii=False, default=str)}")
 
     def _log_response(self, res: Response):
-        """记录响应日志"""
+        """记录响应日志，JSON 解析失败时 fallback 到纯文本"""
         try:
             body = res.json()
             body_preview = json_lib.dumps(body, ensure_ascii=False, indent=2)[:500]
-        except Exception:
+        except (ValueError, TypeError):
             body_preview = res.text[:500]
         logger.debug(f"响应 ({res.status_code}): {body_preview}")
 
@@ -136,13 +136,17 @@ class BaseApi:
             raise   # 未知异常往上抛
 
     def get(self, url: str, **kwargs) -> Response:
+        """发送 GET 请求"""
         return self.request("GET", url, **kwargs)
 
     def post(self, url: str, **kwargs) -> Response:
+        """发送 POST 请求"""
         return self.request("POST", url, **kwargs)
 
     def put(self, url: str, **kwargs) -> Response:
+        """发送 PUT 请求"""
         return self.request("PUT", url, **kwargs)
 
     def delete(self, url: str, **kwargs) -> Response:
+        """发送 DELETE 请求"""
         return self.request("DELETE", url, **kwargs)

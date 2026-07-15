@@ -2,8 +2,8 @@
 角色管理模块 API 封装
 对应接口文档: sys-role-controller
 """
-import allure
 from typing import Optional
+import allure
 from .base_api import BaseApi
 
 
@@ -136,23 +136,18 @@ class RoleApi(BaseApi):
     # 业务辅助方法
     # ---------------------------------------------------------
     def build_role_data(
-        self,
-        role_name: str,
-        role_key: str,
-        role_sort: int = 1,
-        status: str = "0",
-        role_id: Optional[int] = None,
-        menu_ids: list = None,
+        self, role_name: str, role_key: str,
+        role_id: Optional[int] = None, **extra
     ) -> dict:
-        """构造角色数据"""
+        """构造角色数据（role_name + role_key 为必填）"""
         data = {
             "roleName": role_name,
             "roleKey": role_key,
-            "roleSort": role_sort,
-            "status": status,
+            "roleSort": extra.get("role_sort", 1),
+            "status": extra.get("status", "0"),
         }
         if role_id is not None:
             data["roleId"] = role_id
-        if menu_ids is not None:
-            data["menuIds"] = menu_ids
+        if "menu_ids" in extra:
+            data["menuIds"] = extra["menu_ids"] or []
         return data
