@@ -1,30 +1,87 @@
-# RuoYi API Test Framework
+<div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.11+-blue) ![Pytest](https://img.shields.io/badge/Pytest-9.x-green) ![Allure](https://img.shields.io/badge/Allure-2.32-orange) ![Docker](https://img.shields.io/badge/Docker-24+-blue) ![Jenkins](https://img.shields.io/badge/Jenkins-integrated-red) ![Pylint](https://img.shields.io/badge/Pylint-10.00-brightgreen) ![License](https://img.shields.io/badge/License-MIT-green)
+# 🏗️ RuoYi API Test Framework
 
-基于 **Pytest + Requests + Allure** 的企业级接口自动化测试框架，覆盖若依管理系统（RuoYi-Vue v3.9.2）核心业务模块。支持 **代码用例 + Excel 数据驱动** 双引擎，**Docker 容器化** 一键部署，**Jenkins CI/CD** 全自动流水线。
+> **企业级接口自动化测试框架 · POM三层架构 · 双引擎驱动 · Docker容器化 · Jenkins CI/CD**
+
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Pytest](https://img.shields.io/badge/Pytest-9.x-0A9EDC?style=flat-square&logo=pytest&logoColor=white)](https://pytest.org)
+[![Pylint](https://img.shields.io/badge/Pylint-10.00%2F10-brightgreen?style=flat-square&logo=python&logoColor=white)]()
+[![Allure](https://img.shields.io/badge/Allure-2.32-orange?style=flat-square&logo=simpleanalytics&logoColor=white)]()
+[![Docker](https://img.shields.io/badge/Docker-24+-2496ED?style=flat-square&logo=docker&logoColor=white)]()
+[![Jenkins](https://img.shields.io/badge/Jenkins-✓-D24939?style=flat-square&logo=jenkins&logoColor=white)]()
+[![Coverage](https://img.shields.io/badge/Coverage-98%25-green?style=flat-square)]()
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)]()
+
+</div>
+
+<div align="center">
+<table>
+<tr>
+<td width="25%" align="center"><b>🏗️ 架构</b><br/><small>POM 三层</small></td>
+<td width="25%" align="center"><b>⚡ 双引擎</b><br/><small>代码 + Excel</small></td>
+<td width="25%" align="center"><b>✅ 双断言</b><br/><small>API + DB</small></td>
+<td width="25%" align="center"><b>🔁 CI/CD</b><br/><small>Jenkins 全自动</small></td>
+</tr>
+<tr>
+<td width="25%" align="center"><b>🐳 Docker</b><br/><small>6 容器编排</small></td>
+<td width="25%" align="center"><b>📊 Allure</b><br/><small>动态报告</small></td>
+<td width="25%" align="center"><b>🔒 安全测试</b><br/><small>SQL/XSS/越权</small></td>
+<td width="25%" align="center"><b>🧹 工程化</b><br/><small>Pylint 10.0</small></td>
+</tr>
+</table>
+</div>
 
 ---
 
-## 目录
+## 📊 快速一览
 
-- [架构全景](#架构全景)
-- [特性矩阵](#特性矩阵)
-- [技术栈](#技术栈)
-- [快速开始](#快速开始)
-- [项目结构](#项目结构)
-- [架构设计详解](#架构设计详解)
-- [测试引擎](#测试引擎)
-- [Docker 部署](#docker-部署)
-- [CI/CD 流水线](#cicd-流水线)
-- [测试覆盖与策略](#测试覆盖与策略)
-- [代码质量与工程化](#代码质量与工程化)
-- [安全测试](#安全测试)
-- [双维度断言体系](#双维度断言体系)
-- [数据驱动引擎](#数据驱动引擎)
-- [代码示例](#代码示例)
-- [文档体系](#文档体系)
-- [常见问题与排错](#常见问题与排错)
+| 指标 | 数值 |
+|------|------|
+| **测试用例** | 31 条代码用例 + N 条 Excel 数据驱动 |
+| **接口覆盖** | 20+ 个 REST API（角色/用户/登录/安全） |
+| **代码质量** | ⭐ **Pylint 10.00/10**（满分） |
+| **测试覆盖率** | 98%+（api/ + utils/ 核心模块） |
+| **构建时间** | 全量 ~22s，P0 冒烟 < 5s |
+| **失败重试** | 网络波动自动重试 1 次 |
+| **部署方式** | Docker Compose 一键部署 / 本地直连 |
+| **CI/CD** | Jenkins 每日凌晨自动回归 + Allure 报告 + 钉钉通知 |
+
+---
+
+## 📑 目录
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+<div style="min-width: 200px;">
+
+| | 章节 |
+|---|------|
+| 🏗️ | [架构全景](#架构全景) |
+| ✨ | [特性矩阵](#特性矩阵) |
+| 🛠️ | [技术栈](#技术栈) |
+| 🚀 | [快速开始](#快速开始) |
+| 📁 | [项目结构](#项目结构) |
+| 🎯 | [架构设计详解](#架构设计详解) |
+| ⚙️ | [测试引擎](#测试引擎) |
+| 🐳 | [Docker 部署](#docker-部署) |
+
+</div>
+<div style="min-width: 200px;">
+
+| | 章节 |
+|---|------|
+| 🔄 | [CI/CD 流水线](#cicd-流水线) |
+| 📊 | [测试覆盖与策略](#测试覆盖与策略) |
+| 🧹 | [代码质量与工程化](#代码质量与工程化) |
+| 🔒 | [安全测试](#安全测试) |
+| ✅ | [双维度断言体系](#双维度断言体系) |
+| 📋 | [数据驱动引擎](#数据驱动引擎) |
+| 💻 | [代码示例](#代码示例) |
+| 📚 | [文档体系](#文档体系) |
+| ❓ | [常见问题与排错](#常见问题与排错) |
+
+</div>
+</div>
 
 ---
 
@@ -191,92 +248,95 @@
 
 ---
 
-## 特性矩阵
+## ✨ 特性矩阵
 
-### 核心能力
+### 🎯 核心能力
 
 | 特性 | 说明 | 实现方式 |
 |------|------|---------|
-| **API 分层封装 (POM)** | 参考 Page Object Model，每个业务模块封装为独立 API 对象 | `BaseApi` → `LoginApi`/`RoleApi`/`UserApi` |
-| **Token 自动管理** | Session 级 fixture 一次登录，所有测试共享 | `admin_login` fixture → `set_token()` |
-| **双维度断言** | API 响应 + 数据库落盘，两个维度互相印证 | `HttpAssert` + `DbClient.assert_*()` |
-| **Allure 动态报告** | 请求/响应/异常自动 attach，失败按类别分组 | `allure_utils.py` + `pytest_runtest_makereport` |
-| **失败自动重试** | 网络波动/偶发超时自动重试 1 次，间隔 1s | `requests.Retry` + `--reruns 1` |
-| **连接失败容错** | ConnectionError/Timeout 不崩溃，返回 mock 503 | `BaseApi.request()` try-except |
-| **代码 + Excel 双引擎** | 代码用例 + Excel 数据驱动可以混合执行 | `tests/` + `testcases/` 统一入口 |
+| **🏛️ POM 三层架构** | 参考 Page Object Model，每业务模块封装为独立 API 对象 | `BaseApi` → `LoginApi`/`RoleApi`/`UserApi` |
+| **🔑 Token 自动管理** | Session 级 fixture 一次登录，所有测试共享 | `admin_login` fixture → `set_token()` → `Authorization` 头 |
+| **✅ 双维度断言** | API 响应 + MySQL 数据库落盘，两个维度互相印证 | `HttpAssert` + `DbClient.assert_*()` |
+| **📊 Allure 动态报告** | 请求/响应/异常自动 attach，失败按类别分组 | `allure_utils.py` + `pytest_runtest_makereport` |
+| **🔄 失败自动重试** | 网络波动/偶发超时自动重试 1 次，间隔 1s | `requests.Retry` + `--reruns 1` |
+| **🛡️ 连接失败容错** | ConnectionError/Timeout 不崩溃，返回 mock 503 | `BaseApi.request()` try-except 容错 |
+| **⚡ 双引擎驱动** | 代码用例 + Excel 数据驱动混合执行 | `tests/` + `testcases/` 统一入口 |
 
-### 企业级特性
+### 🏢 企业级特性
 
 | 特性 | 说明 |
 |------|------|
-| **Docker 容器化** | 6 个容器编排：MySQL + Redis + RuoYi 后端 + Test Runner + Allure 生成器 + Nginx 报告 |
-| **多环境切换** | `--env=dev/staging/prod/docker` 一键切换，加载对应 .env 配置 |
-| **用例分级 (P0/P1/P2)** | P0 核心功能（冒烟）、P1 异常场景、P2 辅助功能，支持 -m 过滤 |
-| **并发执行** | pytest-xdist 多进程并行，`-n 4` 回归测试缩短 70% |
-| **数据驱动** | Excel 管理测试数据 + Jinja2 模板引擎 + JSONPath/SQL 断言 |
-| **Jenkins CI/CD** | 完整 Pipeline：拉代码 → 启环境 → 等待就绪 → 执行 → 报告 → 通知 |
-| **钉钉通知** | 构建成功/失败自动推送钉钉机器人消息 |
-| **Allure 报告服务** | Nginx 容器持续提供历史报告访问，地址: http://host:8088 |
+| **🐳 Docker 容器化** | 6 容器编排：MySQL + Redis + RuoYi 后端 + Test Runner + Allure + Nginx |
+| **🌍 多环境切换** | `--env=dev/staging/prod/docker` 一键切换，加载对应 `.env` |
+| **📊 用例分级** | P0（冒烟）/ P1（异常）/ P2（辅助），支持 `-m` 过滤 |
+| **⚡ 并发执行** | pytest-xdist 多进程并行，`-n 4` 回归测试缩短 70% |
+| **📋 Excel 数据驱动** | 数据与代码分离，Jinja2 模板引擎 + JSONPath/SQL 断言 |
+| **🔄 Jenkins CI/CD** | 完整 Pipeline：拉代码 → `docker compose up` → `wait_for_api` → pytest → Allure → 钉钉通知 |
+| **🔔 钉钉通知** | 构建成功/失败自动推送钉钉机器人消息 |
+| **📈 Allure 报告服务** | Nginx 容器持续提供历史报告访问 `http://host:8088` |
 
 ---
 
-## 技术栈
+## 🛠️ 技术栈
 
-### 测试核心
+### 🐍 测试核心
 
 | 组件 | 用途 | 最低版本 | 当前版本 |
 |------|------|---------|---------|
-| Python | 编程语言 | 3.10 | 3.11 (Docker) / 3.14 (本地) |
-| pytest | 测试框架 | 7.4 | 9.1 |
-| requests | HTTP 客户端 | 2.31 | 2.32 |
-| allure-pytest | Allure 报告集成 | 2.13 | 2.13 |
-| pytest-xdist | 并发执行 | 3.5 | 3.6 |
-| pytest-rerunfailures | 失败重试 | 12.0 | 14.0 |
+| ![Python](https://img.shields.io/badge/-Python-3776AB?logo=python&logoColor=white) Python | 编程语言 | 3.10 | 3.11 / 3.14 |
+| ![Pytest](https://img.shields.io/badge/-Pytest-0A9EDC?logo=pytest&logoColor=white) pytest | 测试框架 | 7.4 | 9.1 |
+| ![Requests](https://img.shields.io/badge/-Requests-239120?logo=python&logoColor=white) requests | HTTP 客户端 | 2.31 | 2.32 |
+| allure-pytest | Allure 报告集成 | 2.13 | 2.13+ |
+| pytest-xdist | 并发执行 | 3.5 | 3.6+ |
+| pytest-rerunfailures | 失败重试 | 12.0 | 14.0+ |
 
-### 数据 & 断言
+### 🔍 数据 & 断言
 
 | 组件 | 用途 | 说明 |
 |------|------|------|
-| mysql-connector-python | MySQL 数据库连接与断言 | 支持查询/执行/值断言/存在断言 |
+| ![MySQL](https://img.shields.io/badge/-MySQL-4479A1?logo=mysql&logoColor=white) mysql-connector-python | MySQL 连接与断言 | `assert_value` / `assert_exists` |
 | jsonpath | JSONPath 响应断言 | `$.data.xxx` 精确匹配 |
-| openpyxl | Excel 测试数据读取 | 支持 is_true 筛选有效用例 |
-| jinja2 | 模板引擎 | `{{TOKEN}}` 变量注入请求体 |
+| ![Excel](https://img.shields.io/badge/-Excel-217346?logo=microsoftexcel&logoColor=white) openpyxl | Excel 数据读取 | 支持 `is_true` 筛选 |
+| jinja2 | 模板引擎 | `{{TOKEN}}` 变量注入 |
 
-### 基础设施
+### 🏗️ 基础设施
 
-| 组件 | 用途 | 说明 |
+| 组件 | 用途 | 版本 |
 |------|------|------|
-| Docker | 容器运行时 | 24+ |
-| Docker Compose | 服务编排 | 2.24+ |
-| Allure CLI | 报告生成 | 2.32 |
-| Nginx | 报告静态服务 | Alpine 镜像 |
-| Jenkins | CI/CD | 已部署到 Rocky Linux 9 |
+| ![Docker](https://img.shields.io/badge/-Docker-2496ED?logo=docker&logoColor=white) Docker | 容器运行时 | 24+ |
+| ![Docker Compose](https://img.shields.io/badge/-Compose-2496ED?logo=docker&logoColor=white) Docker Compose | 服务编排 | 2.24+ |
+| ![Allure](https://img.shields.io/badge/-Allure-FF6600?logo=simpleanalytics&logoColor=white) Allure CLI | 报告生成 | 2.32 |
+| ![Nginx](https://img.shields.io/badge/-Nginx-009639?logo=nginx&logoColor=white) Nginx | 报告静态服务 | Alpine |
+| ![Jenkins](https://img.shields.io/badge/-Jenkins-D24939?logo=jenkins&logoColor=white) Jenkins | CI/CD 流水线 | Rocky Linux 9 |
 
 ---
 
-## 快速开始
+## 🚀 快速开始
 
-### 1. 环境准备
+### 📦 1. 环境准备
 
 ```bash
+# 克隆项目
 git clone https://github.com/Mavie521/ruoyi-api-test.git
 cd ruoyi_api_test
 
-# 创建虚拟环境
-python -m venv venv
-source venv/Scripts/activate    # Windows
-# source venv/bin/activate      # Mac/Linux
+# 一键搭环境（venv + 依赖 + pre-commit）
+make setup
 
-pip install -r requirements.txt
+# 或者手动：
+# python -m venv .venv
+# source .venv/Scripts/activate   # Windows
+# source .venv/bin/activate       # Mac/Linux
+# pip install -r requirements.txt
 ```
 
-### 2. 配置环境变量
+### ⚙️ 2. 配置环境变量
 
 ```bash
 cp .env.example .env
 ```
 
-编辑 `.env`：
+然后编辑 `.env`：
 
 ```ini
 BASE_URL=http://localhost:8080
@@ -289,38 +349,34 @@ DB_USER=root
 DB_PASSWORD=123456
 ```
 
-### 3. 运行测试
+### 🧪 3. 运行测试
 
 ```bash
-# P0 核心功能（冒烟测试）
-python run.py run -m p0
+# ── 最常用 ──
+make test          # 跑 P0 冒烟（10 条，< 30s）
+make test-all      # 跑全量测试（31 条，< 2min）
+make test-keyword KW=login  # 按关键字
 
-# 指定环境
-python run.py run --env=staging
-
-# 按关键字过滤
-python run.py run -k login
-
-# 并发 4 进程
-python run.py run -n 4
-
-# 失败重试 2 次
-python run.py run --reruns 2
-
-# 查看所有选项
-python run.py run --help
+# ── 或者用 run.py ──
+python run.py run -m p0              # P0 冒烟
+python run.py run --env=staging      # 指定环境
+python run.py run -k login           # 关键字过滤
+python run.py run -n 4               # 4 进程并发
+python run.py run --reruns 2         # 失败重试
+python run.py run --help             # 查看全部选项
 ```
 
-### 4. 生成报告
+### 📊 4. 生成报告
 
 ```bash
-python run.py report    # 生成 Allure HTML 报告
-python run.py open     # 打开报告
+make report        # 生成 Allure HTML 报告
+make open-report   # 打开报告
+# 或：python run.py report
 ```
 
 ---
 
-## 项目结构
+## 📁 项目结构
 
 ```
 ruoyi_api_test/
@@ -411,7 +467,7 @@ ruoyi_api_test/
 
 ---
 
-## 架构设计详解
+## 🎯 架构设计详解
 
 ### 三层架构（POM 模式）
 
@@ -588,7 +644,7 @@ pytest session 开始
 
 ---
 
-## 测试引擎
+## ⚙️ 测试引擎
 
 ### 双引擎架构
 
@@ -674,7 +730,7 @@ setup_module()
 
 ---
 
-## Docker 部署
+## 🐳 Docker 部署
 
 ### 容器架构 (6 容器)
 
@@ -758,7 +814,7 @@ docker compose --profile report run --rm allure-reporter
 
 ---
 
-## CI/CD 流水线
+## 🔄 CI/CD 流水线
 
 ### Jenkins Pipeline 完整流程
 
@@ -854,7 +910,7 @@ pipeline {
 
 ---
 
-## 测试覆盖与策略
+## 📊 测试覆盖与策略
 
 ### 当前测试覆盖
 
@@ -911,7 +967,7 @@ pipeline {
 
 ---
 
-## 代码质量与工程化
+## 🧹 代码质量与工程化
 
 ### 代码质量保障体系
 
@@ -963,7 +1019,7 @@ pipeline {
 
 ---
 
-## 安全测试
+## 🔒 安全测试
 
 覆盖 **SQL 注入 / XSS / 越权 / 边界异常** 四大类安全场景：
 
@@ -1018,7 +1074,7 @@ def test_fake_token_access(self):
 
 ---
 
-## 双维度断言体系
+## ✅ 双维度断言体系
 
 ### 维度一：API 响应断言
 
@@ -1080,7 +1136,7 @@ affected = db.execute("UPDATE sys_user SET status=%s WHERE user_id=%s", ("1", us
 
 ---
 
-## 数据驱动引擎
+## 📋 数据驱动引擎
 
 ### Excel 用例结构
 
@@ -1142,7 +1198,7 @@ Excel 行数据 (原始)
 
 ---
 
-## 代码示例
+## 💻 代码示例
 
 ### BaseApi 基类（完整）
 
@@ -1232,7 +1288,7 @@ def new_role_data(request, db) -> dict:
 
 ---
 
-## 文档体系
+## 📚 文档体系
 
 ```
 docs/
@@ -1259,7 +1315,7 @@ docs/
 
 ---
 
-## 常见问题与排错
+## ❓ 常见问题与排错
 
 ### 1. Jenkins 构建报 "no tests ran in 0.02s"
 
@@ -1368,12 +1424,22 @@ python run.py run --env=staging
 
 ---
 
-## 更新日志
+## 📋 更新日志
 
-| 日期 | 版本 | 变更 |
-|------|------|------|
-| 2026-07-15 | **v3.0** | **工程化工具链：pylint 10.0 + Makefile + pre-commit + 覆盖率配置** |
-| 2026-07-15 | v2.1 | 修复 Jenkins profile/volume 挂载/wait_for_api 问题 |
-| 2026-07-15 | v2.0 | 完善 README 架构图、CI/CD 流水线修复 |
-| 2026-07-13 | v1.1 | 新增安全测试、Excel 数据驱动、Allure 分类 |
-| 2026-07-12 | v1.0 | 初始版本：角色/用户 CRUD + Docker 部署 |
+| 日期 | 版本 | 变更摘要 |
+|------|------|---------|
+| 2026-07-15 | **v3.0** 🎯 | **工程化工具链：pylint 10.0/10 + Makefile + pre-commit + 覆盖率配置** |
+| 2026-07-15 | v2.1 🔧 | 修复 Jenkins profile/volume/wait_for_api 三连问题 |
+| 2026-07-15 | v2.0 📝 | 完善 README 架构图、CI/CD 流水线全面更新 |
+| 2026-07-13 | v1.1 🔒 | 新增安全测试、Excel 数据驱动、Allure 分类报告 |
+| 2026-07-12 | v1.0 🚀 | 初始版本：角色/用户 CRUD + Docker 容器化部署 |
+
+---
+
+<div align="center">
+
+**RuoYi API Test Framework** · Built with ❤️ by Mavie
+
+[GitHub](https://github.com/Mavie521/ruoyi-api-test) · [Jenkins](http://192.168.159.128:8081) · [Allure Report](http://192.168.159.128:8088)
+
+</div>
