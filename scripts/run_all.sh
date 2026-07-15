@@ -9,18 +9,19 @@ cd "$PROJECT_DIR"
 REPORT_DIR="$PROJECT_DIR/reports"
 ALLURE_DIR="$REPORT_DIR/allure-results"
 
+# 显式启动带 profile 的服务（test-runner、ruoyi-api、mysql 等）
 if [ "$MODE" = "clean" ]; then
-  docker compose down 2>/dev/null
-  docker compose up -d
+  docker compose --profile test down 2>/dev/null
+  docker compose --profile test up -d
 else
-  docker compose up -d 2>/dev/null
+  docker compose --profile test up -d 2>/dev/null
 fi
-docker compose run --rm test-runner bash /app/scripts/wait_for_api.sh
+docker compose --profile test run --rm test-runner bash /app/scripts/wait_for_api.sh
 
 if [ "$MARKER" = "all" ]; then
-  docker compose run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ --alluredir=/app/reports/temp-allure -v --reruns 1; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
+  docker compose --profile test run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ --alluredir=/app/reports/temp-allure -v --reruns 1; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
 else
-  docker compose run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ -m $MARKER --alluredir=/app/reports/temp-allure -v --reruns 1; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
+  docker compose --profile test run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ -m $MARKER --alluredir=/app/reports/temp-allure -v --reruns 1; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
 fi
 
 EXIT_CODE=$?

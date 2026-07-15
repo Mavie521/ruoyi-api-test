@@ -92,8 +92,11 @@ services:
       DB_USER: root
       DB_PASSWORD: root
     volumes:
+      - ./tests:/app/tests
       - ./reports:/app/reports
       - ./logs:/app/logs
+      - ./data:/app/data
+      # testcases/ 不挂载 volume —— 直接从镜像内 COPY . . 提供
     networks:
       - ry-network
 
