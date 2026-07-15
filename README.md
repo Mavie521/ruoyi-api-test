@@ -1308,9 +1308,11 @@ docs/
 │                                       # · 复现步骤/根因分析/影响范围
 │
 └── test-summary/                       # 测试总结
-    └── role-management-summary.md      # · 执行概况/通过率/缺陷统计
-                                       # · CI/CD 质量门禁状态
-                                       # · 改进建议
+    ├── role-management-summary.md      # · 执行概况/通过率/缺陷统计
+    │                                   # · CI/CD 质量门禁状态
+    │                                   # · 改进建议
+    └── performance-benchmark.md        # · 性能压测报告（10/50/100 并发）
+                                       # · 响应时间/吞吐量/瓶颈分析
 ```
 
 ---
