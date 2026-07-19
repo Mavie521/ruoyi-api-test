@@ -300,15 +300,23 @@ ruoyi_api_test/
 
 ---
 
-## ✅ 双维度断言体系
+## ✅ 三维断言体系
 
 ```mermaid
 graph LR
-    A["测试用例<br/>发起 API 请求"] --> B["API 断言<br/>assert resp.code == 200"]
-    A --> C["DB 断言<br/>db.assert_value()"]
-    B --> D["Allure 报告<br/>请求/响应 attach"]
-    C --> D
+    A["测试用例<br/>发起 API 请求"] --> B["API 响应断言<br/>assert resp.code == 200"]
+    A --> C["JSONPath 断言<br/>jsonpath(resp, '$.data.roleId')"]
+    A --> D["数据库落盘断言<br/>db.assert_exists('SELECT ...')"]
+    B --> E["Allure 报告<br/>请求/响应 attach"]
+    C --> E
+    D --> E
 ```
+
+| 维度 | 方式 | 验证目标 |
+|:---|:---|:---|
+| **API 响应** | 原生 `assert` | HTTP 状态码、响应 code/msg |
+| **JSONPath** | `jsonpath` 库 | 嵌套 JSON 字段提取与校验 |
+| **数据库** | `DbClient.assert_value()` | 数据真正落盘，避免接口成功但 DB 没写
 
 ---
 
