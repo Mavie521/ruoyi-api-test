@@ -32,4 +32,5 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
 # 默认命令（可被 docker-compose 覆盖）
+RUN pip install --no-cache-dir locust
 CMD ["pytest", "tests/", "-m", "p0", "--alluredir=./reports/allure-results", "--clean-alluredir", "-v"]

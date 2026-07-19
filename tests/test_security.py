@@ -7,9 +7,6 @@
 import allure
 import pytest
 from api import LoginApi
-from utils.assertions import HttpAssert
-
-assertions = HttpAssert()
 
 
 @allure.epic("若依接口测试")

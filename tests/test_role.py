@@ -5,9 +5,6 @@
 import time
 import allure
 import pytest
-from utils.assertions import HttpAssert
-
-assertions = HttpAssert()
 
 
 @allure.epic("若依接口测试")
@@ -25,7 +22,6 @@ class TestRole:
     def test_list_roles(self, role_api):
         """查询角色列表"""
         resp = role_api.list_roles()
-
         assert resp.get("code") == 200
         assert "rows" in resp, "响应应包含 rows"
         assert resp["total"] > 0, "角色列表不应为空"

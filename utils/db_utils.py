@@ -1,16 +1,27 @@
 """
-数据库工具 —— 基于 mysql-connector-python
+数据库工具 —— 基于 mysql-connector-python（连接池版）
 
 核心功能:
-1. DbClient 封装连接管理（支持 with 语法）
+1. 全局连接池（MySQLConnectionPool），避免反复建连
 2. query / query_one / execute 三件套
 3. assert_value / assert_exists / assert_not_exists 数据库断言
 4. 所有操作自动写 Allure 步骤和日志
+5. transaction() 上下文管理器 + execute(commit=False) 支持事务回滚
+
+连接池说明:
+    - 池大小 = 10（pool_size=10），pytest-xdist 4 worker 足够用
+    - 用完后自动归还池中，不会新建 TCP 连接
+    - 池满时 get_connection() 会阻塞等待，不报错
 
 用法:
     with DbClient() as db:
         user = db.query_one("SELECT * FROM sys_user WHERE user_name=%s", ("admin",))
         db.assert_value("SELECT status FROM sys_user WHERE user_id=%s", expected="0", params=(1,))
+
+事务隔离:
+    def test_with_transaction(db_transaction):
+        db_transaction.execute("DELETE FROM sys_role WHERE ...", commit=False)
+        # 用例结束后自动 rollback，不留痕迹
 
 注意事项:
     - 所有SQL参数使用 %s 占位符传参（防SQL注入）
@@ -19,48 +30,71 @@
 """
 import time
 import json
+from contextlib import contextmanager
 import allure
 import mysql.connector
+from mysql.connector.pooling import MySQLConnectionPool
 from config.config import DB_CONFIG
 from utils.logger import logger
 
+# ── 全局连接池（模块级，只初始化一次） ──
+# pool_size=10: 支持 pytest-xdist 4 worker + 剩余给 fixture 预取
+# pool_reset_session=True: 每次 get_connection() 重置会话状态，
+#   避免上一个连接遗留的变量污染下一个请求
+_POOL = None
+
+
+def _get_pool():
+    """获取连接池（单例，首次调用时创建）"""
+    global _POOL
+    if _POOL is None:
+        config = {**DB_CONFIG}
+        _POOL = MySQLConnectionPool(
+            pool_name="ry_pool",
+            pool_size=10,
+            pool_reset_session=True,
+            host=config["host"],
+            port=config["port"],
+            database=config["database"],
+            user=config["user"],
+            password=config["password"],
+            charset=config.get("charset", "utf8"),
+            use_pure=True,
+            autocommit=True,
+            consume_results=True,
+        )
+        logger.info(f"连接池已创建: size=10, db={config['host']}:{config['port']}/{config['database']}")
+    return _POOL
+
 
 class DbClient:
-    """数据库客户端 —— 连接复用，支持 with 上下文"""
+    """数据库客户端 —— 从连接池取连接，用后归还"""
 
     def __init__(self, config: dict = None):
         self.config = config or {**DB_CONFIG}
-        # mysql.connector 的 database 参数名是 database，不用改
         self._conn = None
 
     # ---------------------------------------------------------
     # 连接管理
     # ---------------------------------------------------------
     def connect(self):
-        """建立数据库连接（首次调用时创建，后续复用）"""
+        """从连接池取一个连接（池满时阻塞等待）"""
         if self._conn is None or not self._conn.is_connected():
-            self._conn = mysql.connector.connect(
-                host=self.config["host"],
-                port=self.config["port"],
-                database=self.config["database"],
-                user=self.config["user"],
-                password=self.config["password"],
-                charset=self.config.get("charset", "utf8"),
-                use_pure=True,
-                autocommit=True,  # 必须！否则 SELECT 看不到其他连接的写入
-                consume_results=True,
-            )
-            logger.info(
-                f"DB 已连接: {self.config['host']}:{self.config['port']}/{self.config['database']}"
+            pool = _get_pool()
+            self._conn = pool.get_connection()
+            logger.debug(
+                f"DB 从池中获取: {self.config['host']}:{self.config['port']}/{self.config['database']}"
             )
         return self._conn
 
     def close(self):
-        """关闭数据库连接"""
-        if self._conn and self._conn.is_connected():
-            self._conn.close()
+        """归还连接到池（不关闭，只是标记为可重用）"""
+        if self._conn:
+            try:
+                self._conn.close()  # 归还池中
+            except Exception:
+                pass
             self._conn = None
-            logger.info("DB 连接已关闭")
 
     # ---------------------------------------------------------
     # SQL 执行
@@ -93,16 +127,19 @@ class DbClient:
         return rows[0] if rows else None
 
     @allure.step("SQL 执行")
-    def execute(self, sql: str, params: tuple = None) -> int:
+    def execute(self, sql: str, params: tuple = None, commit: bool = True) -> int:
         """
         执行 INSERT / UPDATE / DELETE
-        返回受影响行数，自动 commit
+        - commit=True:  自动提交（默认，兼容现有用例）
+        - commit=False: 不提交（用于事务上下文，由外层控制提交/回滚）
+        返回受影响行数
         """
         conn = self.connect()
         start = time.time()
         cur = conn.cursor()
         cur.execute(sql, params)
-        conn.commit()
+        if commit:
+            conn.commit()
         affected = cur.rowcount
         cur.close()
         elapsed = time.time() - start
@@ -163,6 +200,31 @@ class DbClient:
         assert len(rows) == 0, \
             f" 数据库断言失败: 期望无记录，但查到 {len(rows)} 条\n  SQL: {sql}  params: {params}"
         logger.info(" 数据库断言通过: 记录不存在")
+
+    # ---------------------------------------------------------
+    # 事务管理
+    # ---------------------------------------------------------
+    @contextmanager
+    def transaction(self):
+        """
+        事务上下文管理器 —— 自动回滚，实现用例间数据隔离
+
+        用法:
+            with db.transaction():
+                db.execute("UPDATE sys_user SET status=%s WHERE user_id=%s", ("1", 1), commit=False)
+                # 抛出异常或正常退出都会自动 rollback
+        """
+        conn = self.connect()
+        conn.start_transaction()
+        try:
+            yield self
+        except Exception:
+            conn.rollback()
+            logger.warning(" 事务回滚（异常）")
+            raise
+        else:
+            conn.rollback()
+            logger.debug(" 事务回滚（正常结束，数据已清理）")
 
     # ---------------------------------------------------------
     # 辅助

@@ -23,6 +23,14 @@ install-dev:                                ## 安装开发工具依赖
 precommit:                                  ## 安装 pre-commit 钩子
 	pre-commit install
 
+# ── 性能测试 ──────────────────────────────────
+
+perf:                                          ## Locust 压测（默认 50 并发，60s）
+	locust -f scripts/performance_test.py --headless -u $(U) -r $(R) -t $(T) --host=http://ruoyi-api:8080
+
+perf-web:                                      ## Locust Web 界面（浏览器实时监控）
+	locust -f scripts/performance_test.py --web-host 0.0.0.0 --host=http://ruoyi-api:8080
+
 # ── 测试执行 ──────────────────────────────────
 
 test: test-p0                              ## 默认：跑 P0 冒烟
@@ -65,6 +73,7 @@ report:                                     ## 生成 Allure 报告
 open-report:                                ## 打开 Allure 报告
 	python run.py open
 
+
 # ── 清理 ──────────────────────────────────────
 
 clean: clean-pyc clean-cache               ## 清理所有临时文件
@@ -88,11 +97,11 @@ docker-down:                                ## 关闭 Docker 所有服务
 
 docker-test:                                ## Docker 环境跑 P0 测试
 	docker compose --profile test run --rm test-runner \
-		sh -c "pytest tests/ -m p0 --alluredir=reports/allure-results -v"
+		sh -c "pytest tests/ -m p0 --alluredir=reports/allure-results -v && \
 
 docker-test-all:                            ## Docker 环境跑全量测试
 	docker compose --profile test run --rm test-runner \
-		sh -c "pytest tests/ testcases/test_excel_driver.py --alluredir=reports/allure-results -v"
+		sh -c "pytest tests/ testcases/test_excel_driver.py --alluredir=reports/allure-results -v && \
 
 docker-report:                              ## Docker 生成 Allure 报告
 	docker compose --profile report run --rm allure-reporter

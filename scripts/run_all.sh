@@ -1,6 +1,6 @@
 #!/bin/bash
 set +e
-MARKER=${1:-p0}; MODE=${2:-fast}; TYPE=${3:-build}; START_TIME=$(date +%s)
+MARKER=${1:-p0}; MODE=${2:-fast}; TYPE=${3:-build}; MAX_RETRIES=${4:-40}; SLEEP=${5:-5}; RERUNS=${6:-1}; START_TIME=$(date +%s)
 
 PROJECT_DIR="/home/yy/ruoyi-api-test"
 [ -d "$PROJECT_DIR" ] || PROJECT_DIR="/app/ruoyi-api-test"
@@ -17,16 +17,17 @@ else
   docker compose up -d 2>/dev/null
 fi
 # test-runner 用 run 创建临时容器（需要 --profile test）
-docker compose --profile test run --rm test-runner bash /app/scripts/wait_for_api.sh
+docker compose --profile test run --rm test-runner bash /app/scripts/wait_for_api.sh "$MAX_RETRIES" "$SLEEP"
 
 if [ "$MARKER" = "all" ]; then
-  docker compose --profile test run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ testcases/test_excel_driver.py --alluredir=/app/reports/temp-allure -v --reruns 1; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
+  docker compose --profile test run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ testcases/test_excel_driver.py --alluredir=/app/reports/temp-allure -v --reruns $RERUNS; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
 else
-  docker compose --profile test run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ testcases/test_excel_driver.py -m $MARKER --alluredir=/app/reports/temp-allure -v --reruns 1; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
+  docker compose --profile test run --rm test-runner sh -c "rm -rf /app/reports/temp-allure && pytest tests/ testcases/test_excel_driver.py -m $MARKER --alluredir=/app/reports/temp-allure -v --reruns $RERUNS; rm -rf /app/reports/allure-results && mv /app/reports/temp-allure /app/reports/allure-results"
 fi
 
 EXIT_CODE=$?
 DURATION=$(($(date +%s)-START_TIME))
+
 PASSED=$(grep -oP '\d+(?= passed)' "$ALLURE_DIR"/*.txt 2>/dev/null | tail -1 || echo "0")
 TOTAL=$(grep -oP '(?<=Total: )\d+' "$ALLURE_DIR"/*.txt 2>/dev/null | tail -1 || echo "0"); [ "$TOTAL" = "0" ] && TOTAL="$PASSED"
 

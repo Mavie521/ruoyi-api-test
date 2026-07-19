@@ -61,8 +61,7 @@ services:
       RUOYI_NAME: RuoYi
       RUOYI_VERSION: 3.9.2
       RUOYI_PROFILE: /home/ruoyi/uploadPath
-    ports:
-      - "8080:8080"
+    # 不对外暴露 8080，仅 Docker 内部网络访问（ruoyi-api:8080）
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/ >/dev/null 2>&1 || curl -sf http://localhost:8080/login >/dev/null 2>&1 || exit 1"]
       interval: 15s

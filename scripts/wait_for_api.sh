@@ -5,8 +5,8 @@
 # =============================================
 set -e
 
-MAX_RETRIES=40
-SLEEP=5
+MAX_RETRIES=${1:-40}
+SLEEP=${2:-5}
 URL="http://ruoyi-api:8080/login"
 
 echo "⏳ 等待后端就绪... (POST $URL)"

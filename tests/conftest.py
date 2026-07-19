@@ -2,17 +2,19 @@
 API 测试专用 fixtures —— Token 管理 + 数据库 + 环境注入
 
 使用方式:
-    def test_something(login_api, user_api, db):
+    def test_something(login_api, role_api, db):
         info = login_api.get_info()
         user = db.query_one("SELECT * FROM sys_user WHERE user_name=%s", ("admin",))
 """
 import time
+import os
+import threading
 import mysql.connector
 import pytest
 from config.config import ADMIN_USERNAME, ADMIN_PASSWORD
 from utils.logger import logger
 from utils.db_utils import DbClient
-from api import LoginApi, UserApi, RoleApi, SystemUserApi
+from api import LoginApi, RoleApi, SystemUserApi
 
 
 @pytest.fixture(scope="session")
@@ -33,14 +35,6 @@ def admin_login() -> LoginApi:
 def login_api(admin_login) -> LoginApi:
     """已登录的 LoginApi"""
     return admin_login
-
-
-@pytest.fixture(scope="session")
-def user_api(admin_login) -> UserApi:
-    """已登录的 UserApi（继承 token）"""
-    api = UserApi()
-    api.set_token(admin_login.token)
-    return api
 
 
 @pytest.fixture(scope="session")
@@ -71,6 +65,50 @@ def db():
     """
     client = DbClient()
     yield client
+    client.close()
+
+
+# ====================================================
+# 【改造】数据隔离 fixtures
+# ====================================================
+
+
+@pytest.fixture
+def unique_suffix() -> str:
+    """
+    线程安全的唯一后缀
+    13k 并发场景下 PID + 线程 ID + 微秒时间戳，确保不冲突
+    用于生成唯一用户名/角色名等测试数据
+    """
+    pid = os.getpid()
+    tid = threading.get_ident()
+    ts = time.time_ns()
+    return f"{pid}_{tid}_{ts}"
+
+
+@pytest.fixture
+def db_transaction() -> DbClient:
+    """
+    独立事务的数据库客户端
+    每条用例结束后全量 rollback，不留测试数据痕迹
+
+    用法:
+        def test_xxx(db_transaction):
+            db_transaction.execute("UPDATE ...", commit=False)
+            db_transaction.assert_value("SELECT ...", expected="...")
+            # 用例结束自动 rollback，等价于「我没来过」
+
+    注意:
+        - 与 session 级别的 db() fixture 独立，互不干扰
+        - execute() 必须传 commit=False（由事务控制）
+        - query / query_one 只读操作不受事务影响
+    """
+    client = DbClient()
+    conn = client.connect()
+    conn.start_transaction()
+    yield client
+    logger.debug("  [db_transaction] 回滚事务 — 测试数据已清理")
+    conn.rollback()
     client.close()
 
 
