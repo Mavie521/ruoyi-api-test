@@ -7,15 +7,17 @@ set -e
 
 MAX_RETRIES=${1:-40}
 SLEEP=${2:-5}
+ADMIN_USER="${ADMIN_USERNAME:-admin}"
+ADMIN_PASS="${ADMIN_PASSWORD:-admin123}"
 URL="http://ruoyi-api:8080/login"
 
 echo "⏳ 等待后端就绪... (POST $URL)"
 
 for i in $(seq 1 $MAX_RETRIES); do
-  # POST /login 并提取 token
+  # POST /login 并提取 token（密码从环境变量读取，不硬编码）
   RESP=$(curl -s --connect-timeout 5 -X POST "$URL" \
     -H "Content-Type: application/json" \
-    -d '{"username":"admin","password":"admin123"}' 2>/dev/null || echo "")
+    -d "{\"username\":\"$ADMIN_USER\",\"password\":\"$ADMIN_PASS\"}" 2>/dev/null || echo "")
 
   TOKEN=$(echo "$RESP" | grep -o '"token"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | grep -o '"[^"]*"$' | tr -d '"')
 

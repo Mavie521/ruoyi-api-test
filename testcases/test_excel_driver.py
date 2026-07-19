@@ -16,7 +16,7 @@ from utils.logger import logger
 from utils.excel_utils import read_excel
 from utils.allure_utils import allure_init
 from utils.data_driver import render_case, send_request, do_assert, do_db_assert, do_extract
-from config.config import BASE_URL
+from config.config import BASE_URL, ADMIN_USERNAME, ADMIN_PASSWORD
 
 # 读取所有 Excel 用例
 ALL_CASES = read_excel()
@@ -27,10 +27,12 @@ def setup_module():
     """全局初始化：登录一次，提取 TOKEN"""
     logger.info(f"--- Excel 数据驱动: 共 {len(ALL_CASES)} 条用例 ---")
     resp = requests.post(BASE_URL + "/login",
-                         json={"username": "admin", "password": "admin123"}, timeout=10)
-    token = resp.json().get("token")
-    if token:
-        GLOBAL_VARS["TOKEN"] = token
+                         json={"username": ADMIN_USERNAME, "password": ADMIN_PASSWORD}, timeout=10)
+    assert resp.ok, f"登录请求失败: {resp.status_code}"
+    body = resp.json()
+    token = body.get("token")
+    assert token, f"登录失败: {body.get('msg', '')}"
+    GLOBAL_VARS["TOKEN"] = token
 
 
 def _build_params():

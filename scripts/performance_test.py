@@ -12,7 +12,12 @@ RuoYi API 性能压测脚本 (Locust)
   # CSV 导出结果
   locust -f scripts/performance_test.py --headless -u 50 -r 5 -t 60s --csv=reports/perf/report --host=http://ruoyi-api:8080
 """
+import os
 from locust import HttpUser, task, between, tag
+
+# 从环境变量读取，不硬编码
+_ADMIN_USER = os.environ.get("ADMIN_USERNAME", "admin")
+_ADMIN_PASS = os.environ.get("ADMIN_PASSWORD", "admin123")
 
 
 class RuoYiUser(HttpUser):
@@ -24,7 +29,7 @@ class RuoYiUser(HttpUser):
     def on_start(self):
         """用户启动时登录"""
         resp = self.client.post("/login", json={
-            "username": "admin", "password": "admin123"
+            "username": _ADMIN_USER, "password": _ADMIN_PASS
         })
         if resp.status_code == 200:
             data = resp.json()
@@ -108,7 +113,7 @@ class RuoYiWriteUser(HttpUser):
 
     def on_start(self):
         resp = self.client.post("/login", json={
-            "username": "admin", "password": "admin123"
+            "username": _ADMIN_USER, "password": _ADMIN_PASS
         })
         if resp.status_code == 200:
             self.token = resp.json().get("token")
