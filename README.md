@@ -86,7 +86,7 @@ graph TB
 ### POM 三层架构
 
 ```mermaid
-flowchart LR
+graph LR
     subgraph Test["🧪 测试用例层"]
         TR["test_role.py"]
         TS["test_system_user.py"]
@@ -133,7 +133,7 @@ flowchart LR
 ### 启动流程
 
 ```mermaid
-flowchart LR
+graph LR
     A["① IDEA 编译 JAR<br/>mvn package"] --> B["② SCP 到 VM<br/>scp -r ./* yy@VM_IP"]
     B --> C["③ SSH 到 VM<br/>docker compose up -d"]
     C --> D["④ 运行测试<br/>bash run_all.sh p0 fast"]
@@ -185,7 +185,7 @@ bash scripts/run_all.sh p0 fast
 ### 流水线流程
 
 ```mermaid
-flowchart LR
+graph LR
     subgraph Trigger["触发"]
         Cron["⏰ Cron 08:00"]
         Manual["🖱️ 手动参数"]
@@ -213,7 +213,7 @@ flowchart LR
 ### run_all.sh 7 步流程
 
 ```mermaid
-flowchart LR
+graph LR
     S1["① compose up"] --> S2["② wait_for_api"]
     S2 --> S3["③ pytest --reruns 1"]
     S3 --> S4["④ 收集结果"]
@@ -303,7 +303,7 @@ ruoyi_api_test/
 ## ✅ 双维度断言体系
 
 ```mermaid
-flowchart LR
+graph LR
     A["测试用例<br/>发起 API 请求"] --> B["API 断言<br/>assert resp.code == 200"]
     A --> C["DB 断言<br/>db.assert_value()"]
     B --> D["Allure 报告<br/>请求/响应 attach"]
