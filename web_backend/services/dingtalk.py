@@ -36,36 +36,35 @@ def send_notification(run_tag: str, status: str, total: int, passed: int,
 
     # 按结果分三种消息模板
     if status == "passed" and failed == 0:
-        title = f"测试通过 - {run_tag}"
+        title = f"全部通过 - {run_tag}"
         text = (
-            f"## 全部通过\n\n"
-            f"**任务**: {run_tag}\n\n"
-            f"> 用例总数: {total}\n"
-            f"> 通过: {passed}  |  失败: {failed}\n"
-            f"> 通过率: {pass_rate}\n"
-            f"> 耗时: {duration:.1f}s\n"
+            f"# {pass_rate} 全部通过\n\n"
+            f"---\n\n"
+            f"**{passed}** / {total} 条用例  ·  **{duration:.1f}s**\n\n"
         )
     elif status == "passed" and failed > 0:
-        title = f"部分通过 - {run_tag}"
+        title = f"部分失败 - {run_tag}"
         text = (
-            f"## 部分通过\n\n"
-            f"**任务**: {run_tag}\n\n"
-            f"> 用例总数: {total}\n"
-            f"> 通过: {passed}  |  "
-            f"失败: {failed}\n"
-            f"> 通过率: {pass_rate}\n"
-            f"> 耗时: {duration:.1f}s\n"
+            f"# {pass_rate} 部分失败\n\n"
+            f"---\n\n"
+            f"|  | 数量 |\n"
+            f"| :--: | :--: |\n"
+            f"| 总数 | {total} |\n"
+            f"| 通过 | {passed} |\n"
+            f"| 失败 | {failed} |\n\n"
+            f"耗时 **{duration:.1f}s**\n\n"
         )
     else:
-        title = f"测试失败 - {run_tag}"
+        title = f"执行异常 - {run_tag}"
         text = (
-            f"## 存在失败\n\n"
-            f"**任务**: {run_tag}\n\n"
-            f"> 用例总数: {total}\n"
-            f"> 通过: {passed}  |  "
-            f"失败: {failed}\n"
-            f"> 通过率: {pass_rate}\n"
-            f"> 耗时: {duration:.1f}s\n"
+            f"# {pass_rate} 执行异常\n\n"
+            f"---\n\n"
+            f"|  | 数量 |\n"
+            f"| :--: | :--: |\n"
+            f"| 总数 | {total} |\n"
+            f"| 通过 | {passed} |\n"
+            f"| 失败 | {failed} |\n\n"
+            f"耗时 **{duration:.1f}s**\n\n"
         )
 
     if report_url:
