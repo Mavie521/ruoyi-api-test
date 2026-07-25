@@ -70,7 +70,7 @@ export default function ReportPage() {
             disabled={loading}
             className="self-start bg-surface hover:bg-surface-light border border-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm transition-colors"
           >
-            {loading ? '加载中...' : '🔄 刷新列表'}
+            {loading ? '⏳' : '🔄 刷新列表'}
           </button>
 
           {loading ? (
