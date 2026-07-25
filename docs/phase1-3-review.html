@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阶段一至三完整复盘 — 若依API测试管理平台</title>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --border:#334155; --primary:#818cf8; --green:#34d399; --red:#f87171; --amber:#fbbf24; --text:#e2e8f0; --muted:#94a3b8; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); overflow:hidden; height:100vh; }
+  .slide-container { display:flex; transition:transform .4s cubic-bezier(.4,0,.2,1); height:100vh; }
+  .slide { min-width:100vw; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 80px; overflow-y:auto; }
+  .slide-inner { max-width:960px; width:100%; }
+  h1 { font-size:2.4rem; margin-bottom:.25em; background:linear-gradient(135deg,var(--primary),#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  h2 { font-size:1.6rem; margin-bottom:.6em; color:var(--primary); border-bottom:2px solid var(--border); padding-bottom:.4em; }
+  h3 { font-size:1.15rem; margin:1em 0 .4em; color:var(--text); }
+  p,li { line-height:1.75; color:var(--muted); font-size:.95rem; }
+  .tag { display:inline-block; padding:2px 10px; border-radius:12px; font-size:.78rem; font-weight:600; }
+  .tag-ok { background:#065f46; color:var(--green); }
+  .tag-err { background:#7f1d1d; color:var(--red); }
+  .tag-warn { background:#78350f; color:var(--amber); }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; margin:16px 0; }
+  .row { display:flex; gap:16px; flex-wrap:wrap; }
+  .col { flex:1; min-width:240px; }
+  .code { background:#0f172a; border:1px solid var(--border); border-radius:8px; padding:14px 18px; font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:.82rem; overflow-x:auto; white-space:pre; color:#cbd5e1; line-height:1.6; margin:8px 0; }
+  .code .k { color:#c084fc; } .code .s { color:#34d399; } .code .c { color:#64748b; } .code .w { color:#fbbf24; }
+  table { width:100%; border-collapse:collapse; margin:8px 0; font-size:.88rem; }
+  th { text-align:left; padding:10px 14px; border-bottom:2px solid var(--border); color:var(--primary); font-weight:600; }
+  td { padding:10px 14px; border-bottom:1px solid var(--border); color:var(--muted); }
+  .arch-box { border:2px dashed var(--border); border-radius:12px; padding:20px; text-align:center; margin:8px 0; }
+  .arch-box.active { border-color:var(--primary); background:rgba(129,140,248,.06); }
+  .flex-center { display:flex; align-items:center; justify-content:center; gap:20px; flex-wrap:wrap; }
+  .num { font-size:3rem; font-weight:800; color:var(--primary); }
+  .arrow { color:var(--muted); font-size:1.5rem; }
+  .nav { position:fixed; bottom:24px; right:32px; display:flex; gap:10px; z-index:100; }
+  .nav button { background:var(--card); border:1px solid var(--border); color:var(--text); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:.85rem; transition:all .2s; }
+  .nav button:hover { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .dot-bar { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:100; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:all .3s; }
+  .dot.active { background:var(--primary); width:24px; border-radius:4px; }
+  .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .stat-item { background:var(--card); border-radius:10px; padding:18px; text-align:center; border-top:3px solid var(--primary); }
+  .stat-item .val { font-size:1.8rem; font-weight:700; }
+  .stat-item .lbl { font-size:.78rem; color:var(--muted); margin-top:4px; }
+</style>
+</head>
+<body>
+
+<div class="slide-container" id="slider">
+<!-- 01 封面 -->
+<div class="slide"><div class="slide-inner" style="text-align:center">
+  <p style="color:var(--primary);letter-spacing:4px;font-size:.85rem;margin-bottom:16px;">PHASE 1 – 3 · 完整复盘</p>
+  <h1 style="font-size:3rem;">若依API测试管理平台</h1>
+  <p style="font-size:1.2rem;color:var(--muted);margin:12px 0 32px;">最小闭环 → 企业扩展 → Mock平台 · 全栈实战</p>
+  <div class="flex-center" style="gap:32px;">
+    <div style="text-align:center"><div class="num">19</div><span style="color:var(--muted);font-size:.85rem;">后端文件</span></div>
+    <div style="text-align:center"><div class="num">19</div><span style="color:var(--muted);font-size:.85rem;">前端文件</span></div>
+    <div style="text-align:center"><div class="num">18+</div><span style="color:var(--muted);font-size:.85rem;">API 接口</span></div>
+    <div style="text-align:center"><div class="num">14</div><span style="color:var(--muted);font-size:.85rem;">Bug 修复</span></div>
+  </div>
+  <p style="margin-top:40px;color:var(--muted);font-size:.85rem;">2026年7月 · Python FastAPI + React Vite + SQLite</p>
+</div></div>
+
+<!-- 02 项目背景 -->
+<div class="slide"><div class="slide-inner">
+  <h2>📖 项目背景与目标</h2>
+  <div class="row">
+    <div class="col card">
+      <h3>🎯 业务目标</h3>
+      <ul>
+        <li>为现有 pytest 自动化框架搭建 Web 管理界面</li>
+        <li>测试人员无需命令行即可浏览用例、触发执行、查看报告</li>
+        <li>面试展示全栈能力：前后端分离 + 数据库 + 异步调度</li>
+      </ul>
+    </div>
+    <div class="col card">
+      <h3>🔒 硬性约束</h3>
+      <ul>
+        <li><span class="tag tag-ok">核心</span> 现有 pytest 代码一字不改</li>
+        <li><span class="tag tag-ok">核心</span> 通过 subprocess 调用 pytest</li>
+        <li><span class="tag tag-ok">核心</span> 前后端分离，HTTP JSON 通信</li>
+        <li><span class="tag tag-ok">核心</span> 无鉴权，本地使用优先</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🏗️ 技术选型决策</h3>
+    <table>
+      <tr><th>层级</th><th>选型</th><th>理由</th></tr>
+      <tr><td>后端</td><td>FastAPI</td><td>与 pytest 同语言；原生 async；自动 OpenAPI 文档</td></tr>
+      <tr><td>前端</td><td>React 18 + Vite + Tailwind</td><td>现代 SPA；Vite 秒级构建；Tailwind 快速样式</td></tr>
+      <tr><td>数据库</td><td>SQLite (sqlite3 标准库)</td><td>零配置；单文件；标准库无额外依赖</td></tr>
+      <tr><td>pytest 调用</td><td>subprocess.Popen + 线程池</td><td>跨平台兼容；shell=False 安全；不阻塞事件循环</td></tr>
+      <tr><td>实时通信</td><td>2秒前端轮询</td><td>一期最简方案；复杂度和可靠性平衡</td></tr>
+    </table>
+  </div>
+</div></div>
+
+<!-- 03 系统架构 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🏛️ 系统架构</h2>
+  <div class="arch-box active" style="margin-bottom:12px;">
+    <strong>浏览器 :8001</strong> — React SPA (Tailwind 暗色主题)
+    <div style="font-size:.82rem;color:var(--muted)">仪表盘 / 用例浏览 / 执行历史 / 测试报告</div>
+  </div>
+  <div class="flex-center"><span class="arrow">↓ ↑ JSON</span></div>
+  <div class="arch-box active" style="border-style:solid;">
+    <strong>FastAPI :8001</strong> (web_backend/)
+    <div style="font-size:.82rem;color:var(--muted)">路由层 → 服务层 → 数据库</div>
+    <div class="row" style="margin-top:8px;font-size:.8rem;">
+      <span class="tag tag-ok">project_routes</span>
+      <span class="tag tag-ok">run_routes</span>
+      <span class="tag tag-ok">report_routes</span>
+      <span class="tag tag-warn">catch-all</span>
+      <span class="tag tag-ok">collector</span>
+      <span class="tag tag-ok">runner</span>
+      <span class="tag tag-ok">parser</span>
+    </div>
+  </div>
+  <div class="flex-center"><span class="arrow">↓ subprocess</span></div>
+  <div class="arch-box">
+    <strong>pytest tests/</strong> (现有框架，只读)
+    <div style="font-size:.82rem;color:var(--muted)">api/ + tests/ + config/ + utils/ + conftest.py</div>
+  </div>
+  <div class="flex-center" style="margin-top:8px;"><span class="arrow">↗ 写入</span></div>
+  <div class="arch-box">
+    <strong>SQLite</strong> (cache/test_platform.db)
+    <div style="font-size:.82rem;color:var(--muted)">case_cache / runs / run_results</div>
+  </div>
+  <div class="flex-center" style="margin-top:8px;"><span class="arrow">→</span></div>
+  <div class="arch-box">
+    <strong>Allure Report</strong> (reports/allure-report-{tag}/)
+    <div style="font-size:.82rem;color:var(--muted)">每次执行独立目录，历史不覆盖</div>
+  </div>
+</div></div>
+
+<!-- 04 数据模型 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🗄️ 数据模型设计</h2>
+  <div class="row">
+    <div class="col card">
+      <h3>case_cache（用例缓存）</h3>
+      <div class="code">nodeid TEXT UNIQUE    <span class="c">— tests/test_role.py::TestRole::test_list_roles</span>
+module TEXT            <span class="c">— tests/test_role.py</span>
+class_name TEXT        <span class="c">— TestRole</span>
+func_name TEXT         <span class="c">— test_list_roles</span>
+markers TEXT           <span class="c">— JSON: ["p0","smoke"]</span></div>
+    </div>
+    <div class="col card">
+      <h3>runs（执行记录）</h3>
+      <div class="code">run_tag TEXT UNIQUE    <span class="c">— run-20260725-001</span>
+status TEXT            <span class="c">— pending|running|passed|failed</span>
+markers / env / extra_args
+total_tests / passed / failed / skipped
+started_at / finished_at / output_log</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>run_results（用例结果）</h3>
+    <div class="code">run_id FK → runs         outcome: passed|failed|skipped|error
+test_name / nodeid       duration_sec / message</div>
+  </div>
+  <p style="margin-top:12px;"><span class="tag tag-warn">决策点</span> 为什么用 SQLite 而不是复用 MySQL？运行历史非业务数据，零配置、便携、标准库免依赖。<strong>面试话术：</strong>"运行元数据和业务数据分库存储，职责分离。"</p>
+</div></div>
+
+<!-- 05 核心流程 -->
+<div class="slide"><div class="slide-inner">
+  <h2>⚙️ 三大核心流程</h2>
+  <div class="card">
+    <h3>1. 用例收集 <span class="tag tag-ok">collector.py</span></h3>
+    <div class="code">subprocess.run([<span class="s">"python"</span>, <span class="s">"-m"</span>, <span class="s">"pytest"</span>, <span class="s">"tests/"</span>, <span class="s">"--collect-only"</span>, <span class="s">"-q"</span>])
+→ 解析 : : 格式或树形格式 → <span class="w">DELETE FROM</span> case_cache → <span class="w">INSERT</span> 新数据</div>
+  </div>
+  <div class="card">
+    <h3>2. 执行测试 <span class="tag tag-ok">runner.py</span></h3>
+    <div class="code">asyncio.create_task(<span class="w">后台</span>):
+  <span class="w">ThreadPoolExecutor</span> → subprocess.Popen(cmd, <span class="w">shell=False</span>)
+  → 读取 output → <span class="w">parser.py</span> 解析 junitxml → 入库
+  → allure generate → 更新 runs.status</div>
+    <p style="margin-top:8px;">
+      <span class="tag tag-warn">决策点</span> 为什么用 ThreadPoolExecutor 而非 asyncio.create_subprocess_exec？
+      Windows ProactorEventLoop 兼容性问题。线程池方案跨平台一致。
+    </p>
+  </div>
+  <div class="card">
+    <h3>3. 状态轮询 <span class="tag tag-ok">run_routes.py</span></h3>
+    <div class="code">前端 setInterval(2s) → GET /api/runs/{id}/status → {status,total,passed,failed}
+status=running → 继续 / status=passed|failed → 停止 + 加载详情</div>
+  </div>
+</div></div>
+
+<!-- 06 目录结构 -->
+<div class="slide"><div class="slide-inner">
+  <h2>📁 项目目录（新增部分）</h2>
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <h3>web_backend/ (12文件)</h3>
+        <div class="code" style="font-size:.75rem;">main.py              <span class="c">FastAPI入口+兜底路由</span>
+config.py            <span class="c">路径常量统一管理</span>
+database.py          <span class="c">SQLite建表+CRUD</span>
+routers/
+  project_routes.py  <span class="c">用例浏览+刷新缓存</span>
+  run_routes.py      <span class="c">执行创建+轮询+历史</span>
+  report_routes.py   <span class="c">Allure报告+MIME路由</span>
+services/
+  collector.py       <span class="c">pytest --collect-only</span>
+  runner.py          <span class="c">subprocess调度+并发锁</span>
+  parser.py          <span class="c">junitxml解析入库</span></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h3>web_frontend/ (16文件)</h3>
+        <div class="code" style="font-size:.75rem;">src/
+  App.jsx            <span class="c">React Router路由</span>
+  api/client.js      <span class="c">fetch封装</span>
+  pages/
+    DashboardPage    <span class="c">统计卡片+快捷执行</span>
+    TestCasesPage    <span class="c">模块树+用例列表</span>
+    RunHistoryPage   <span class="c">分页列表+自动轮询</span>
+    RunDetailPage    <span class="c">结果表格+报告入口</span>
+    ReportPage       <span class="c">iframe+新标签</span>
+  components/
+    Layout/StatCard/RunTriggerModal/ResultTable</div>
+      </div>
+      <div class="card" style="margin-top:12px;">
+        <h3>根目录 +2</h3>
+        <div class="code" style="font-size:.75rem;">cache/      <span class="c">SQLite 数据库</span>
+reports/    <span class="c">Allure报告 独立目录</span></div>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:8px;"><span class="tag tag-ok">0 修改</span> api/ tests/ config/ utils/ conftest.py run.py Makefile — 全部不动</p>
+</div></div>
+
+<!-- 07 踩坑全景 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🐛 Bug 修复全景图（11个）</h2>
+  <table>
+    <tr><th>#</th><th>错误现象</th><th>根因</th><th>修复</th></tr>
+    <tr>
+      <td>1</td><td>asyncio.create_subprocess_exec → NotImplementedError</td>
+      <td>Windows ProactorEventLoop 不支持</td>
+      <td>改用 ThreadPoolExecutor + subprocess.Popen</td>
+    </tr>
+    <tr>
+      <td>2</td><td>unrecognized arguments: --env=dev</td>
+      <td>--env 非 pytest 标准参数</td>
+      <td>移除 CLI 参数，通过 ENV 环境变量传入</td>
+    </tr>
+    <tr>
+      <td>3</td><td>localhost:8080 拒绝连接</td>
+      <td>Docker 端口 8080 未映射到宿主机</td>
+      <td>docker-compose.yml 加 ports: "8080:8080"</td>
+    </tr>
+    <tr>
+      <td>4</td><td>pytest 全 Pass 但平台显示 0/0</td>
+      <td>junitxml 根节点 testsuites→testsuite→testcase 层次未处理</td>
+      <td>解析改为读取 testsuite 子节点属性</td>
+    </tr>
+    <tr>
+      <td>5</td><td>用例收集"未收集到任何用例"</td>
+      <td>正则匹配不到树形格式输出</td>
+      <td>兼容 :: 格式和 &lt;Module&gt;&lt;Class&gt;&lt;Function&gt; 格式</td>
+    </tr>
+    <tr>
+      <td>6</td><td>Python 3.9 → type | None 语法错误</td>
+      <td>联合类型 | 语法 Python 3.10+ 特性</td>
+      <td>改用 typing.Optional</td>
+    </tr>
+    <tr>
+      <td>7</td><td>gevent 编译失败</td>
+      <td>locust 依赖需要 C 编译器</td>
+      <td>pip install 时 grep -v locust 跳过</td>
+    </tr>
+    <tr>
+      <td>8</td><td>Allure JS 资源 404</td>
+      <td>/{tag} 路由吞噬带 / 的路径</td>
+      <td>调整路由顺序，具体路由在前</td>
+    </tr>
+    <tr>
+      <td>9</td><td>浏览器拒绝执行 JS → SyntaxError :</td>
+      <td>FileResponse 返回 MIME: application/json</td>
+      <td>显式设置 Content-Type 按文件后缀</td>
+    </tr>
+    <tr>
+      <td>10</td><td>report/index.html 相对路径基准错误</td>
+      <td>/{tag} 无尾斜杠，/api/reports/ 成为基准</td>
+      <td>重定向到 /{tag}/index.html</td>
+    </tr>
+    <tr>
+      <td>11</td><td>SPA 刷新非首页 404</td>
+      <td>StaticFiles Mount 被函数路由拦截</td>
+      <td>统一兜底路由：文件存在则返回，否则 index.html</td>
+    </tr>
+  </table>
+</div></div>
+
+<!-- 08 踩坑分布 -->
+<div class="slide"><div class="slide-inner">
+  <h2>📊 Bug 分布与典型模式</h2>
+  <div class="row">
+    <div class="col">
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="stat-item"><div class="val" style="color:var(--amber);">3</div><div class="lbl">跨平台兼容</div></div>
+        <div class="stat-item"><div class="val" style="color:var(--amber);">3</div><div class="lbl">路由/HTTP</div></div>
+        <div class="stat-item"><div class="val" style="color:var(--amber);">2</div><div class="lbl">Python版本</div></div>
+        <div class="stat-item"><div class="val" style="color:var(--green);">1</div><div class="lbl">Docker网络</div></div>
+        <div class="stat-item"><div class="val" style="color:var(--green);">1</div><div class="lbl">XML解析</div></div>
+        <div class="stat-item"><div class="val" style="color:var(--green);">1</div><div class="lbl">依赖冲突</div></div>
+      </div>
+    </div>
+    <div class="col card">
+      <h3>🔁 高频踩坑模式</h3>
+      <ul>
+        <li><strong>跨平台地狱：</strong>Windows ↔ Linux 双环境导致的 asyncio 差异 + 端口可达性 + 路径分隔符</li>
+        <li><strong>路由配置陷阱：</strong>FastAPI 路由顺序、Mount vs 函数路由优先级、MIME 类型自动判断不准</li>
+        <li><strong>版本兼容隐雷：</strong>Python 3.9 语法限制、Node 16→18 升级、pytest 输出格式差异</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <h3>💡 经验总结</h3>
+    <ol>
+      <li><strong>先测目标环境：</strong>开发机确认端口后立刻在目标机验证，避免"Windows 通 Linux 挂"的延迟发现</li>
+      <li><strong>防御性解析：</strong>pytest 输出格式不是标准 API，必须同时兼容新旧格式</li>
+      <li><strong>路由即文档：</strong>FastAPI /docs 自动生成应作为联调第一入口，curl 逐个测接口</li>
+      <li><strong>尽量标准库：</strong>sqlite3、xml.etree.ElementTree、subprocess 都在标准库里，零依赖就是零风险</li>
+    </ol>
+  </div>
+</div></div>
+
+<!-- 09 关键决策点 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🧭 关键决策与权衡</h2>
+  <table>
+    <tr><th>决策点</th><th>方案A</th><th>方案B</th><th>选择</th><th>理由</th></tr>
+    <tr>
+      <td>鉴权</td><td>JWT + bcrypt</td><td>无鉴权</td><td><span class="tag tag-ok">B</span></td>
+      <td>本地单人使用；一期聚焦核心闭环</td>
+    </tr>
+    <tr>
+      <td>用例收集</td><td>AST 静态解析</td><td>pytest --collect-only</td><td><span class="tag tag-ok">B</span></td>
+      <td>保真度最高；parametrize 展开后结果准确</td>
+    </tr>
+    <tr>
+      <td>实时通信</td><td>SSE 推送</td><td>2秒前端轮询</td><td><span class="tag tag-ok">B</span></td>
+      <td>一期最简；规避 SSE 跨平台代理问题</td>
+    </tr>
+    <tr>
+      <td>subprocess</td><td>asyncio.create_subprocess_exec</td><td>ThreadPoolExecutor+Popen</td><td><span class="tag tag-ok">B</span></td>
+      <td>Windows/Linux 兼容；避免 ProactorEventLoop 坑</td>
+    </tr>
+    <tr>
+      <td>Allure 服务</td><td>StaticFiles Mount</td><td>统一兜底路由</td><td><span class="tag tag-ok">B</span></td>
+      <td>Mount 被函数路由拦截；兜底路由灵活可控</td>
+    </tr>
+    <tr>
+      <td>前端构建</td><td>npm run dev (开发)</td><td>npm run build (生产)</td><td><span class="tag tag-ok">B</span></td>
+      <td>一个端口全搞定；FastAPI 直接服务 dist/</td>
+    </tr>
+    <tr>
+      <td>前端加载态</td><td>文字空状态占位</td><td>静默空 div</td><td><span class="tag tag-ok">B</span></td>
+      <td>CSR 刷新不可避免闪一下；静默最干净</td>
+    </tr>
+  </table>
+  <p style="margin-top:16px;"><span class="tag tag-warn">面试话术</span> "每个决策都有 trade-off。我选择了一期最简可用方案，复杂功能（鉴权、SSE）留到后续迭代。"</p>
+</div></div>
+
+<!-- 10 成果展示 -->
+<div class="slide"><div class="slide-inner">
+  <h2>✅ 交付成果</h2>
+  <div class="stat-grid">
+    <div class="stat-item"><div class="val">28</div><div class="lbl">代码文件</div></div>
+    <div class="stat-item"><div class="val">~4,900</div><div class="lbl">代码行数</div></div>
+    <div class="stat-item"><div class="val">9</div><div class="lbl">API 端点</div></div>
+    <div class="stat-item"><div class="val">3</div><div class="lbl">SQL 表</div></div>
+  </div>
+  <div class="card" style="margin-top:20px;">
+    <h3>功能清单（第一阶段 100% 完成）</h3>
+    <table>
+      <tr><th>模块</th><th>功能</th><th>状态</th></tr>
+      <tr><td>仪表盘</td><td>统计卡片 + 最近执行 + 一键触发</td><td><span class="tag tag-ok">✓</span></td></tr>
+      <tr><td>用例浏览</td><td>模块树 + 用例列表 + 手动刷新缓存</td><td><span class="tag tag-ok">✓</span></td></tr>
+      <tr><td>执行触发</td><td>环境/Marker/路径/关键字/自定义参数 + 单任务锁</td><td><span class="tag tag-ok">✓</span></td></tr>
+      <tr><td>执行历史</td><td>分页列表 + 状态徽章 + 自动轮询 running 任务</td><td><span class="tag tag-ok">✓</span></td></tr>
+      <tr><td>执行详情</td><td>结果表格 + 过滤 + 展开失败信息 + 输出日志</td><td><span class="tag tag-ok">✓</span></td></tr>
+      <tr><td>测试报告</td><td>Allure iframe 嵌入 + 新标签打开 + 独立目录存储</td><td><span class="tag tag-ok">✓</span></td></tr>
+      <tr><td>部署</td><td>单端口 uvicorn + dist/ + Docker 若依打通</td><td><span class="tag tag-ok">✓</span></td></tr>
+    </table>
+  </div>
+</div></div>
+
+<!-- 11 项目亮点 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🌟 项目亮点 / 面试要点</h2>
+  <div class="row">
+    <div class="col card">
+      <h3>全栈闭环</h3>
+      <p>React SPA → FastAPI → subprocess → pytest → junitxml → SQLite → Allure，完整数据流。</p>
+    </div>
+    <div class="col card">
+      <h3>零侵入封装</h3>
+      <p>现有 pytest 框架代码一字不改。通过 subprocess + 环境变量完成调度。</p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col card">
+      <h3>安全编码</h3>
+      <p>subprocess 使用 list 方式 <code>shell=False</code>，文件服务做路径穿越防护，参数校验。</p>
+    </div>
+    <div class="col card">
+      <h3>工程化思维</h3>
+      <p>统一 config.py 管理路径常量；分层架构 routers/services/database；并发锁控制。</p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col card">
+      <h3>AI 辅助开发</h3>
+      <p>80%+ 代码由 Claude Code 辅助生成；关键决策人工把关；11 个 bug 逐个人工定位修复。</p>
+    </div>
+    <div class="col card">
+      <h3>跨平台交付</h3>
+      <p>Windows 开发 → Linux 生产部署；Python 3.9 兼容适配；Docker 网络联调。</p>
+    </div>
+  </div>
+  <p style="margin-top:20px;text-align:center;color:var(--primary);font-size:1.1rem;">
+    "不靠培训班，自己业余从零搭建。每个 Bug 都是学习机会。"
+  </p>
+</div></div>
+
+<!-- 12 启动与展望 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🚀 启动方式 & 后续规划</h2>
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <h3>一行启动</h3>
+        <div class="code">cd ruoyi-api-test
+pip install -r web_backend/requirements.txt
+cd web_frontend && npm install && npm run build && cd ..
+uvicorn web_backend.main:app --host 0.0.0.0 --port 8001
+<span class="c"># 浏览器打开 http://IP:8001</span></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h3>Docker 一键若依</h3>
+        <div class="code">docker compose up -d
+<span class="c"># MySQL :3307  Redis :6379  若依 :8080</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px;">
+    <h3>📅 后续阶段规划</h3>
+    <table>
+      <tr><th>阶段</th><th>内容</th><th>复杂度</th></tr>
+      <tr><td>二</td><td>失败重跑 + 环境管理 + 健康探测 + 钉钉通知</td><td><span class="tag tag-warn">中</span></td></tr>
+      <tr><td>三</td><td>内置 Mock 平台：规则引擎 + 匹配路由 + 调用日志 + 异常模拟</td><td><span class="tag tag-err">高</span></td></tr>
+      <tr><td>四</td><td>JWT 鉴权 + 用户管理 + 权限控制</td><td><span class="tag tag-ok">低</span></td></tr>
+    </table>
+  </div>
+</div></div>
+
+<!-- 13 结束 -->
+<div class="slide"><div class="slide-inner" style="text-align:center">
+  <h1 style="font-size:2.6rem;">Thank You</h1>
+  <p style="font-size:1.1rem;color:var(--muted);margin:20px 0;">若依API测试管理平台 · 第一阶段完整复盘</p>
+  <div style="margin:32px 0;">
+    <p style="color:var(--muted);">🧪 用例浏览 → ▶ 执行触发 → 📊 结果展示 → 📈 Allure报告</p>
+    <p style="color:var(--muted);margin-top:8px;">React + FastAPI + SQLite + pytest + Docker</p>
+  </div>
+  <p style="color:var(--primary);font-size:.9rem;">GitHub: Mavie521/ruoyi-api-test</p>
+  <p style="color:var(--muted);font-size:.78rem;margin-top:40px;">用 ← → 方向键或点击下方导航点切换幻灯片</p>
+</div></div>
+
+
+<!-- ═══════════════ 第二阶段幻灯片 ═══════════════ -->
+
+<!-- P2-01 阶段二封面 -->
+<div class="slide"><div class="slide-inner" style="text-align:center">
+  <p style="color:var(--green);letter-spacing:4px;font-size:.85rem;margin-bottom:16px;">PHASE 2 · 企业级扩展</p>
+  <h1 style="font-size:2.8rem;">从可用到好用</h1>
+  <p style="font-size:1.1rem;color:var(--muted);margin:16px 0;">
+    失败重跑 · 环境管理 · 健康探测 · 钉钉通知 · 孤儿进程清理
+  </p>
+  <div class="flex-center" style="gap:24px;margin-top:28px;">
+    <span class="tag tag-ok">+5 后端文件</span>
+    <span class="tag tag-ok">+2 前端页面</span>
+    <span class="tag tag-ok">+6 API 接口</span>
+    <span class="tag tag-warn">+3 核心 Bug</span>
+  </div>
+</div></div>
+
+<!-- P2-02 阶段一回顾 + 阶段二概览 -->
+<div class="slide"><div class="slide-inner">
+  <h2>📊 两阶段对比</h2>
+  <table>
+    <tr><th>维度</th><th>阶段一（最小闭环）</th><th>阶段二（企业扩展）</th></tr>
+    <tr><td>核心功能</td><td>用例浏览 · 执行 · 报告</td><td>环境管理 · 通知 · 重跑 · 清理</td></tr>
+    <tr><td>API 接口</td><td>9 个</td><td>+6 个 = 15 个</td></tr>
+    <tr><td>SQL 表</td><td>3 张</td><td>+2 张 = 5 张</td></tr>
+    <tr><td>并发控制</td><td>asyncio.Lock</td><td>asyncio.Lock 回归 + 死锁修复</td></tr>
+    <tr><td>进程管理</td><td>无</td><td>uvicorn 启动自动杀孤儿 + 清除按钮</td></tr>
+    <tr><td>通知</td><td>无</td><td>钉钉 Webhook + 加签 + 三种模板</td></tr>
+    <tr><td>环境</td><td>config.py 硬编码</td><td>DB 管理 + 健康探测 + 联动执行</td></tr>
+    <tr><td>稳定性</td><td>单功能可用</td><td>长时间运行不卡死不残留</td></tr>
+  </table>
+</div></div>
+
+<!-- P2-03 失败重跑 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🔄 失败用例一键重跑</h2>
+  <div class="row">
+    <div class="col card">
+      <h3>实现原理</h3>
+      <div class="code"><span class="c"># 从 run_results 取失败 nodeid</span>
+<span class="k">failed_nodes</span> = [r[<span class="s">"nodeid"</span>] <span class="k">for</span> r <span class="k">in</span> results]
+<span class="c"># 直接传给 pytest 作为位置参数</span>
+pytest <span class="s">tests/test_role.py::TestRole::test_create_role</span></div>
+    </div>
+    <div class="col card">
+      <h3>关键决策</h3>
+      <ul>
+        <li><span class="tag tag-warn">坑</span> 最初用 -k keywords 匹配，nodeid 含 :: 导致解析失败</li>
+        <li><span class="tag tag-ok">改</span> 直接传 nodeid 作为 pytest 位置参数</li>
+        <li>runner test_path 改为 split 扩展，支持多个路径</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:12px;"><span class="tag tag-ok">面试话术</span> "失败重跑不是简单重跑全部，我实现了精确到单条用例的重跑——从结果表中提取失败 nodeid，直接拼成 pytest 位置参数"</p>
+</div></div>
+
+<!-- P2-04 环境管理 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🔧 环境管理 + 健康探测</h2>
+  <div class="row">
+    <div class="col card">
+      <h3>功能闭环</h3>
+      <div class="flex-center" style="justify-content:flex-start;gap:8px;flex-wrap:wrap;font-size:.85rem;">
+        <span class="tag tag-ok">CRUD</span><span>→</span>
+        <span class="tag tag-ok">Ping 探测</span><span>→</span>
+        <span class="tag tag-ok">localStorage 持久化</span><span>→</span>
+        <span class="tag tag-ok">执行联动</span>
+      </div>
+      <ul style="margin-top:12px;">
+        <li>环境增删改查，名称 + Base URL</li>
+        <li>一键 Ping 探测目标存活（HTTP GET + 超时）</li>
+        <li>探测结果存 localStorage，刷新不丢失</li>
+        <li>选中环境执行 → 自动传 BASE_URL 给 pytest</li>
+      </ul>
+    </div>
+    <div class="col card">
+      <h3>数据库 → 执行联动</h3>
+      <div class="code"><span class="c">// 前端：选环境 → 自动带 base_url</span>
+<span class="k">handleEnvChange</span>(envName) {
+  <span class="k">const</span> selected = envOptions.<span class="k">find</span>(...)
+  setForm({ ..., <span class="s">base_url</span>: selected.base_url })
+}
+<span class="c">// 后端：注入子进程环境变量</span>
+<span class="k">if</span> base_url:
+    sub_env[<span class="s">"BASE_URL"</span>] = base_url</div>
+    </div>
+  </div>
+</div></div>
+
+<!-- P2-05 钉钉通知 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🔔 钉钉机器人通知</h2>
+  <div class="row">
+    <div class="col card">
+      <h3>三种结果模板</h3>
+      <div class="code" style="font-size:.78rem;"><span class="c"># 全部通过</span>
+<span class="s">87.5% 全部通过</span>
+---
+28 / 31 条用例 · 12.5s
+
+<span class="c"># 部分失败</span>
+<span class="s">87.5% 部分失败</span>
+---
+| 总数 | 31 | 通过 | 28 | 失败 | 3 |
+
+<span class="c"># 执行异常</span>
+<span class="s">0% 执行异常</span>
+---
+含报告链接 + IP 可配置</div>
+    </div>
+    <div class="col card">
+      <h3>技术细节</h3>
+      <ul>
+        <li>HMAC-SHA256 加签算法 + Base64 + URLEncode</li>
+        <li>force 模式：测试发送跳过所有条件检查</li>
+        <li>任务完成自动推：通过 enabled 开关控制</li>
+        <li>notify_on="failed_only" 减少噪音</li>
+        <li>requests timeout=5s 防止卡死</li>
+        <li>PLATFORM_URL config 常量，不依赖环境变量</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px;">
+    <h3>前端配置页</h3>
+    <p>Webhook URL + Secret 加签 + 启用开关 + 通知条件  + 未填 Secret 时 ⚠ 提示 + 一键测试发送</p>
+  </div>
+</div></div>
+
+<!-- P2-06 进程管理 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🧹 孤儿进程清理</h2>
+  <div class="row">
+    <div class="col card">
+      <h3>问题场景</h3>
+      <ul>
+        <li>uvicorn 崩溃 → pytest 子进程变孤儿 → 端口占用、数据库 running 残留</li>
+        <li>网络超时 → asyncio 任务卡死 → 后续请求全部 409</li>
+      </ul>
+    </div>
+    <div class="col card">
+      <h3>解决方案</h3>
+      <ul>
+        <li><span class="tag tag-ok">启动清理</span> lifespan 中 pkill -f pytest + UPDATE runs</li>
+        <li><span class="tag tag-ok">手动清理</span> 仪表盘 + 执行历史双入口 🧹 按钮</li>
+        <li><span class="tag tag-ok">每次重启</span> 自动重置 running → error + 标记中断原因</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <h3>代码实现</h3>
+    <div class="code"><span class="c"># main.py lifespan 启动钩子</span>
+<span class="k">if</span> platform.system() == <span class="s">"Windows"</span>:
+    subprocess.run([<span class="s">"taskkill"</span>, <span class="s">"/F"</span>, <span class="s">"/IM"</span>, <span class="s">"pytest.exe"</span>])
+<span class="k">else</span>:
+    subprocess.run([<span class="s">"pkill"</span>, <span class="s">"-f"</span>, <span class="s">"pytest"</span>])
+c.execute(<span class="s">"UPDATE runs SET status='error' WHERE status='running'"</span>)</div>
+  </div>
+</div></div>
+
+<!-- P2-07 第二阶段踩坑 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🐛 第二阶段 Bug 修复</h2>
+  <table>
+    <tr><th>#</th><th>错误现象</th><th>根因</th><th>修复</th></tr>
+    <tr>
+      <td>1</td><td>重跑一直卡在"执行中"</td>
+      <td>-k 匹配 nodeid 失败 + ThreadPoolExecutor 单线程死锁</td>
+      <td>改传 nodeid 位置参数 + asyncio.to_thread 替代 run_in_executor</td>
+    </tr>
+    <tr>
+      <td>2</td><td>404 handler 拦截 API 请求</td>
+      <td>/{full_path:path} 函数路由优先于 mount</td>
+      <td>改用 @app.exception_handler(404) 方案</td>
+    </tr>
+    <tr>
+      <td>3</td><td>output_log 丢失 [CONFIG] 诊断信息</td>
+      <td>子进程 stdout 直接覆盖了 output_lines</td>
+      <td>拼接 output_lines + output 再写入</td>
+    </tr>
+    <tr>
+      <td>4</td><td>Allure JS MIME 类型错误</td>
+      <td>FileResponse 返回 application/json</td>
+      <td>显式设置 Content-Type 映射表</td>
+    </tr>
+    <tr>
+      <td>5</td><td>钉钉链接 localhost 手机打不开</td>
+      <td>环境变量 PLATFORM_URL 不生效</td>
+      <td>改为 config.py 常量读取</td>
+    </tr>
+    <tr>
+      <td>6</td><td>测试发送按钮不稳定</td>
+      <td>enabled + notify_on 条件检查干扰</td>
+      <td>加入 force=True 跳过所有检查</td>
+    </tr>
+  </table>
+</div></div>
+
+<!-- P2-08 架构演进 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🏗️ 架构演进：阶段一 → 阶段二</h2>
+  <table>
+    <tr><th>组件</th><th>阶段一</th><th>阶段二</th></tr>
+    <tr><td>并发方案</td><td>asyncio.Lock + ThreadPoolExecutor</td><td>asyncio.Lock + asyncio.to_thread</td></tr>
+    <tr><td>进程回收</td><td>无</td><td>lifespan 启动清理 + 手动按钮</td></tr>
+    <tr><td>前端路由</td><td>StaticFiles Mount</td><td>404 exception_handler</td></tr>
+    <tr><td>子系统</td><td>3 张表独立</td><td>5 张表，environments↔runs 联动</td></tr>
+    <tr><td>通知</td><td>无</td><td>钉钉 Webhook + 三种模板</td></tr>
+    <tr><td>诊断</td><td>无</td><td>[CONFIG] 日志 + /debug-run 端点</td></tr>
+  </table>
+  <div class="card" style="margin-top:16px;">
+    <h3>架构设计原则</h3>
+    <ol>
+      <li><strong>锁内不做 IO：</strong>asyncio.Lock 只锁 DB 写入，子进程放到锁外执行</li>
+      <li><strong>兜底不拦截：</strong>404 exception_handler 替代路由兜底，API 永远优先</li>
+      <li><strong>启动即清理：</strong>每次 uvicorn 启动自动清除上一个实例的残留</li>
+    </ol>
+  </div>
+</div></div>
+
+<!-- P2-09 成果 + 展望 -->
+<div class="slide"><div class="slide-inner">
+  <h2>📦 阶段一+二 完整交付</h2>
+  <div class="stat-grid">
+    <div class="stat-item"><div class="val">35</div><div class="lbl">代码文件</div></div>
+    <div class="stat-item"><div class="val">~6,500</div><div class="lbl">代码行数</div></div>
+    <div class="stat-item"><div class="val">15</div><div class="lbl">API 端点</div></div>
+    <div class="stat-item"><div class="val">5</div><div class="lbl">SQL 表</div></div>
+  </div>
+  <div class="card" style="margin-top:20px;">
+    <h3>完整功能矩阵</h3>
+    <div class="row">
+      <div class="col">
+        <table>
+          <tr><th>一级功能</th><th>二级功能</th><th>阶段</th></tr>
+          <tr><td>用例浏览</td><td>pytest collect → 缓存 → 刷新</td><td><span class="tag tag-ok">一</span></td></tr>
+          <tr><td>执行触发</td><td>多参数 + 并发锁 + 轮询</td><td><span class="tag tag-ok">一</span></td></tr>
+          <tr><td>测试报告</td><td>Allure iframe + 路由 + MIME</td><td><span class="tag tag-ok">一</span></td></tr>
+          <tr><td>失败重跑</td><td>nodeid 提取 → 单用例重跑</td><td><span class="tag tag-warn">二</span></td></tr>
+          <tr><td>环境管理</td><td>CRUD + Ping + 联动执行</td><td><span class="tag tag-warn">二</span></td></tr>
+          <tr><td>钉钉通知</td><td>加签 + 模板 + 条件过滤</td><td><span class="tag tag-warn">二</span></td></tr>
+          <tr><td>进程管理</td><td>启动清理 + 手动清除</td><td><span class="tag tag-warn">二</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- P2-10 面试要点 -->
+<div class="slide"><div class="slide-inner">
+  <h2>💡 面试核心话术</h2>
+  <div class="card">
+    <h3>30 秒自我介绍版</h3>
+    <p style="font-size:1rem;">"我用 React + FastAPI 从零搭了一个接口测试管理平台，通过 subprocess 封装 pytest，不改动原有自动化代码。支持用例浏览、异步执行、实时轮询、Allure 报告、失败重跑、环境管理、钉钉通知。开发过程修了 14 个 Bug，每个都能讲清根因。"</p>
+  </div>
+  <div class="card">
+    <h3>面试官追问 → 回答方向</h3>
+    <table>
+      <tr><th>如果面试官问</th><th>你怎么答</th></tr>
+      <tr><td>"为什么要做这个？"</td><td>接口测试人员日常改用例→验证→看结果→发报告的痛点</td></tr>
+      <tr><td>"和 Jenkins 有什么区别？"</td><td>Jenkins 管定时流水线，我的管即时随手跑，各司其职</td></tr>
+      <tr><td>"怎么和 pytest 集成的？"</td><td>subprocess + 环境变量，零侵入，不改一行原有代码</td></tr>
+      <tr><td>"遇到什么技术难点？"</td><td>ThreadPoolExecutor 死锁 / 404 handler 拦截 API / 跨平台进程管理</td></tr>
+      <tr><td>"钉钉通知怎么做？"</td><td>HMAC-SHA256 加签 + 三种结果模板 + force 测试模式</td></tr>
+    </table>
+  </div>
+</div></div>
+
+<!-- ═══════════════ 第三阶段幻灯片 ═══════════════ -->
+
+<!-- P3-01 阶段三封面 -->
+<div class="slide"><div class="slide-inner" style="text-align:center">
+  <p style="color:#a78bfa;letter-spacing:4px;font-size:.85rem;margin-bottom:16px;">PHASE 3 · Mock 平台</p>
+  <h1 style="font-size:2.6rem;">内置 Mock 服务</h1>
+  <p style="font-size:1.1rem;color:var(--muted);margin:16px 0;">
+    规则管理 · 通配符匹配 · 异常模拟 · 调用日志
+  </p>
+  <div class="flex-center" style="gap:24px;margin-top:28px;">
+    <span class="tag tag-ok">+2 后端文件</span>
+    <span class="tag tag-ok">+1 前端页面</span>
+    <span class="tag tag-ok">+1 Mock 引擎</span>
+    <span class="tag tag-warn">+2 SQL 表</span>
+  </div>
+</div></div>
+
+<!-- P3-02 Mock 架构 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🎭 Mock 平台架构</h2>
+  <div class="arch-box active" style="margin-bottom:12px;">
+    <strong>外部调用方</strong> — curl / 浏览器 / Postman / 自动化脚本
+  </div>
+  <div class="flex-center"><span class="arrow">↓ ANY /mock/{path}</span></div>
+  <div class="arch-box active" style="border-style:solid;">
+    <strong>Mock 统一入口</strong> (main.py)
+    <div style="font-size:.82rem;color:var(--muted)">@app.api_route — GET/POST/PUT/DELETE/PATCH/OPTIONS</div>
+    <div style="font-size:.82rem;color:var(--muted)">空路径 → HTTPException(404) → SPA 兜底</div>
+  </div>
+  <div class="flex-center"><span class="arrow">↓</span></div>
+  <div class="arch-box">
+    <strong>mock_engine.py —— 匹配引擎</strong>
+    <div style="font-size:.82rem;color:var(--muted);">精确匹配优先 → 通配符 * 匹配 → 未命中 404</div>
+  </div>
+  <div class="row" style="margin-top:8px;">
+    <div class="col arch-box"><strong>mock_rules 表</strong><br><span style="font-size:.78rem;color:var(--muted);">规则 CRUD + 启用/禁用</span></div>
+    <div class="col arch-box"><strong>mock_logs 表</strong><br><span style="font-size:.78rem;color:var(--muted);">每次调用自动记录</span></div>
+  </div>
+</div></div>
+
+<!-- P3-03 规则匹配 -->
+<div class="slide"><div class="slide-inner">
+  <h2>🔍 双轮匹配策略</h2>
+  <div class="row">
+    <div class="col card">
+      <h3>第一轮：精确匹配</h3>
+      <div class="code">规则: <span class="s">api/user/info</span>
+请求: /mock/api/user/info → <span class="w">✅ 命中</span>
+请求: /mock/api/user/123  → <span class="c">❌ 不命中</span></div>
+    </div>
+    <div class="col card">
+      <h3>第二轮：通配符 <code>*</code> 匹配</h3>
+      <div class="code">规则: <span class="s">api/user/*</span>
+请求: /mock/api/user/123  → <span class="w">✅ 命中</span>
+请求: /mock/api/user/456  → <span class="w">✅ 命中</span>
+
+<span class="c"># * 转正则 [^/]+ 匹配单段路径</span>
+regex = <span class="s">"^api/user/[^/]+$"</span></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px;">
+    <h3>匹配优先级</h3>
+    <p>精确匹配 > 通配符匹配。同路径既有精确规则又有通配符规则时，精确规则优先。</p>
+  </div>
+</div></div>
+
+<!-- P3-04 Mock 功能矩阵 -->
+<div class="slide"><div class="slide-inner">
+  <h2>📋 Mock 功能矩阵</h2>
+  <table>
+    <tr><th>功能</th><th>实现</th><th>面试重点</th></tr>
+    <tr><td>规则 CRUD</td><td>名称/路径/方法/状态码/响应体/延迟/描述</td><td>RESTful API 设计</td></tr>
+    <tr><td>启用/禁用</td><td>一行开关，不删规则即可切换</td><td>UX 细节</td></tr>
+    <tr><td>精确匹配</td><td>路径 + 方法完全一致</td><td>基础匹配引擎</td></tr>
+    <tr><td>通配符 *</td><td>/user/* → /user/123, * → [^/]+ 正则</td><td>模式匹配算法</td></tr>
+    <tr><td>状态码模拟</td><td>任意 HTTP 状态码（200/400/500...）</td><td>异常测试</td></tr>
+    <tr><td>延迟注入</td><td>delay_ms 精确到毫秒</td><td>性能测试场景</td></tr>
+    <tr><td>调用日志</td><td>每次调用自动记录 + 前端分页查询 + 清空</td><td>审计追溯</td></tr>
+    <tr><td>JSON 校验</td><td>保存时前端校验 JSON 语法</td><td>防御性编程</td></tr>
+    <tr><td>CORS 跨域</td><td>全局中间件 + Mock 响应头 + OPTIONS</td><td>跨域理解</td></tr>
+    <tr><td>SPA 兼容</td><td>空路径 HTTPException → 404 handler → index.html</td><td>路由架构理解</td></tr>
+  </table>
+</div></div>
+
+<!-- P3-05 Mock 使用场景 -->
+<div class="slide"><div class="slide-inner">
+  <h2>💼 企业测试场景</h2>
+  <div class="row">
+    <div class="col card">
+      <h3>场景一：后端未就绪</h3>
+      <div class="code">前端要调 /api/user/info
+后端说"后天才能好"
+→ Mock 建规则 → 前端不阻塞</div>
+    </div>
+    <div class="col card">
+      <h3>场景二：异常模拟</h3>
+      <div class="code">正常接口总是 200
+想验证前端的 500 错误处理？
+→ 状态码填 500 → 页面弹错误提示</div>
+    </div>
+  </div>
+  <div class="row" style="margin-top:12px;">
+    <div class="col card">
+      <h3>场景三：慢网络测试</h3>
+      <div class="code">验证 loading 动画？
+→ delay_ms: 3000
+→ 页面转圈 3 秒才出数据</div>
+    </div>
+    <div class="col card">
+      <h3>场景四：接口开关测试</h3>
+      <div class="code">测"接口挂了"的降级逻辑？
+→ 点禁用按钮
+→ 同路径返回 404</div>
+    </div>
+  </div>
+</div></div>
+
+<!-- P3-06 三阶段总览 -->
+<div class="slide"><div class="slide-inner">
+  <h2>📊 三阶段数据总览</h2>
+  <div class="stat-grid">
+    <div class="stat-item"><div class="val">38+</div><div class="lbl">代码文件</div></div>
+    <div class="stat-item"><div class="val">7,500+</div><div class="lbl">代码行数</div></div>
+    <div class="stat-item"><div class="val">18+</div><div class="lbl">API 端点</div></div>
+    <div class="stat-item"><div class="val">7</div><div class="lbl">SQL 表</div></div>
+  </div>
+  <div class="card" style="margin-top:20px;">
+    <table>
+      <tr><th>阶段</th><th>主题</th><th>关键产出</th><th>文件</th></tr>
+      <tr><td><span class="tag tag-ok">一</span></td><td>最小闭环</td><td>用例浏览 + 执行 + 轮询 + Allure</td><td>28</td></tr>
+      <tr><td><span class="tag tag-warn">二</span></td><td>企业扩展</td><td>环境管理 + 钉钉 + 重跑 + 孤儿清理</td><td>+11</td></tr>
+      <tr><td><span class="tag tag-err" style="background:#4c1d95;color:#a78bfa;">三</span></td><td>Mock 平台</td><td>规则引擎 + 通配符 + 日志 + 异常模拟</td><td>+5</td></tr>
+    </table>
+  </div>
+</div></div>
+
+<!-- 阶段一至三结束 -->
+<div class="slide"><div class="slide-inner" style="text-align:center">
+  <h1 style="font-size:2.6rem;">Phase 1 – 3 全部完成</h1>
+  <p style="font-size:1.1rem;color:var(--muted);margin:20px 0;">若依API测试管理平台 · 从零到 Mock 平台</p>
+  <div class="flex-center" style="gap:12px;margin:24px 0;flex-wrap:wrap;">
+    <span class="tag tag-ok">用例浏览+执行+报告</span>
+    <span class="tag tag-warn">环境+钉钉+重跑</span>
+    <span class="tag tag-err" style="background:#4c1d95;color:#a78bfa;">Mock 平台</span>
+  </div>
+  <p style="color:var(--primary);font-size:.9rem;">GitHub: Mavie521/ruoyi-api-test</p>
+  <p style="color:var(--muted);font-size:.78rem;margin-top:40px;">用 ← → 方向键或点击下方导航点切换幻灯片</p>
+</div></div>
+
+</div><!-- slider end -->
+
+<div class="dot-bar" id="dots"></div>
+<div class="nav">
+  <button onclick="go(-1)">← 上一页</button>
+  <button onclick="go(1)">下一页 →</button>
+</div>
+
+<script>
+const slider = document.getElementById('slider');
+const slides = slider.children;
+const total = slides.length;
+let idx = 0;
+
+// dots
+const dotBar = document.getElementById('dots');
+for(let i=0;i<total;i++){ const d=document.createElement('span'); d.className='dot'; d.onclick=()=>jump(i); dotBar.appendChild(d); }
+function update(){ slider.style.transform=`translateX(-${idx*100}vw)`; dotBar.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx)); }
+function go(n){ idx=Math.max(0,Math.min(total-1,idx+n)); update(); }
+function jump(n){ idx=n; update(); }
+update();
+document.addEventListener('keydown',e=>{ if(e.key==='ArrowRight') go(1); if(e.key==='ArrowLeft') go(-1); });
+</script>
+</body>
+</html>
