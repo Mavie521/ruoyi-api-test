@@ -4,7 +4,15 @@ import api from '../api/client.js'
 export default function TestCasesPage() {
   const [modules, setModules] = useState([])
   const [cases, setCases] = useState([])
-  const [selectedModule, setSelectedModule] = useState('')
+  const [selectedModule, setSelectedModule] = useState(() => new URLSearchParams(window.location.search).get('m') || '')
+
+  const selectModule = (module) => {
+    setSelectedModule(module)
+    loadCases(module)
+    const url = new URL(window.location)
+    module ? url.searchParams.set('m', module) : url.searchParams.delete('m')
+    window.history.replaceState({}, '', url)
+  }
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [message, setMessage] = useState('')
@@ -84,7 +92,7 @@ export default function TestCasesPage() {
           {modules.map((m) => (
             <button
               key={m.module}
-              onClick={() => loadCases(m.module)}
+              onClick={() => selectModule(m.module)}
               className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex justify-between items-center ${
                 selectedModule === m.module
                   ? 'bg-primary/20 text-primary font-medium'
