@@ -173,7 +173,7 @@ async def ai_analyze(run_id: int):
         raise HTTPException(status_code=404, detail="执行记录不存在")
     from ..database import get_results
     from ..services.ai_analyzer import analyze_failures_batch
-    failed = get_results(run_id, outcome="failed")
+    failed = get_results(run_id, outcome="failed") + get_results(run_id, outcome="error")
     if not failed:
         raise HTTPException(status_code=400, detail="没有失败的用例可分析")
     # 同步执行（手动触发）
