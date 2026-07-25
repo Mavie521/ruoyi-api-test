@@ -5,7 +5,7 @@ export default function TestCasesPage() {
   const [modules, setModules] = useState([])
   const [cases, setCases] = useState([])
   const [selectedModule, setSelectedModule] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [message, setMessage] = useState('')
 

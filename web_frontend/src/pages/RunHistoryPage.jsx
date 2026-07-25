@@ -13,7 +13,7 @@ const statusMap = {
 
 export default function RunHistoryPage() {
   const navigate = useNavigate()
-  const [runs, setRuns] = useState([])
+  const [runs, setRuns] = useState(null)  // null=加载中, []表示空
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [showTrigger, setShowTrigger] = useState(false)
@@ -58,7 +58,9 @@ export default function RunHistoryPage() {
         </button>
       </div>
 
-      {runs.length === 0 ? (
+      {runs === null ? (
+        <p className="text-gray-500 text-center py-16">加载中...</p>
+      ) : runs.length === 0 ? (
         <p className="text-gray-500 text-center py-16">暂无执行记录</p>
       ) : (
         <>

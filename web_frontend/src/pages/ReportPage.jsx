@@ -6,7 +6,7 @@ export default function ReportPage() {
   const [searchParams] = useSearchParams()
   const [reports, setReports] = useState([])
   const [selectedTag, setSelectedTag] = useState(searchParams.get('tag') || '')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)  // 初始 loading，避免闪现"暂无报告"
 
   const loadReports = async () => {
     setLoading(true)
