@@ -10,6 +10,14 @@ JUnit XML 解析器 —— 解析 pytest --junitxml 输出，写入数据库
   - 调用 pytest（由 runner.py 负责）
   - 生成 Allure 报告（由 runner.py 负责）
   - 任务状态更新（由 runner.py 负责）
+
+注意:
+  pytest --junitxml 输出结构:
+    <testsuites>
+      <testsuite tests="11" failures="0" errors="0" ...>
+        <testcase classname="..." name="..." time="..." />
+      </testsuite>
+    </testsuites>
 """
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -19,16 +27,6 @@ from ..database import insert_result
 def parse_and_store(xml_path, run_id: int) -> dict:
     """
     解析 JUnit XML 文件，将每条用例结果写入 run_results 表
-
-    参数:
-      xml_path:  JUnit XML 文件路径
-      run_id:    对应的 runs 表主键
-
-    返回:
-      {
-        "total": 9, "passed": 8, "failed": 1,
-        "skipped": 0, "error": 0, "duration": 12.5
-      }
     """
     path = Path(xml_path)
     if not path.exists():
@@ -37,14 +35,23 @@ def parse_and_store(xml_path, run_id: int) -> dict:
     tree = ET.parse(str(path))
     root = tree.getroot()
 
-    total = int(root.get("tests", 0))
-    failures = int(root.get("failures", 0))
-    errors = int(root.get("errors", 0))
-    skipped = int(root.get("skipped", 0))
-    duration = float(root.get("time", 0))
+    # pytest 输出 <testsuites> 包 <testsuite>，属性在 testsuite 上
+    if root.tag == "testsuites":
+        suite = root.find("testsuite")
+    else:
+        suite = root
+
+    if suite is None:
+        return {"total": 0, "passed": 0, "failed": 0, "skipped": 0, "error": 0, "duration": 0}
+
+    total = int(suite.get("tests", 0))
+    failures = int(suite.get("failures", 0))
+    errors = int(suite.get("errors", 0))
+    skipped = int(suite.get("skipped", 0))
+    duration = float(suite.get("time", 0))
     passed = total - failures - errors - skipped
 
-    for testcase in root.findall("testcase"):
+    for testcase in suite.findall("testcase"):
         classname = testcase.get("classname", "")
         name = testcase.get("name", "")
         time_val = float(testcase.get("time", 0))
