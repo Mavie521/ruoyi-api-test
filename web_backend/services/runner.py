@@ -21,6 +21,9 @@ from ..database import create_run, update_run, is_running
 from .parser import parse_and_store
 
 
+_run_lock = asyncio.Lock()
+
+
 def _run_pytest_sync(cmd: list, cwd: str, timeout: int, env: dict) -> str:
     """同步执行 pytest（在 asyncio.to_thread 中运行）"""
     process = subprocess.Popen(
@@ -45,15 +48,22 @@ async def execute_pytest(
     base_url: str = "",
 ) -> dict:
     """异步执行 pytest（asyncio.to_thread + subprocess.Popen）"""
-    if is_running():
+    # ── 并发控制：锁内只做 DB 写入，不放耗时操作 ──
+    run = None
+    async with _run_lock:
+        if is_running():
+            return None
+        run = create_run(
+            environment=environment, markers=markers, test_path=test_path,
+            keyword=keyword, extra_args=extra_args,
+        )
+        run_id = run["id"]
+        update_run(run_id, status="running", started_at=datetime.now().isoformat())
+
+    if run is None:
         return None
 
-    # ── 1. 创建数据库记录 ──
-    run = create_run(
-        environment=environment, markers=markers, test_path=test_path,
-        keyword=keyword, extra_args=extra_args,
-    )
-    run_id = run["id"]
+    # ── 1. 使用已创建的记录 ──
     tag = run["run_tag"]
 
     # ── 2. 组装 pyt est 命令 ──
@@ -77,10 +87,8 @@ async def execute_pytest(
     if extra_args:
         cmd.extend(extra_args.split())
 
-    # ── 3. 执行 ──
-    started_at = datetime.now().isoformat()
+    # ── 3. 执行（锁已释放，不阻塞其他请求的 DB 查询）──
     output_lines = []
-    update_run(run_id, status="running", started_at=started_at)
 
     try:
         sub_env = {**os.environ, "ENV": environment}
