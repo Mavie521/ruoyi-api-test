@@ -59,7 +59,12 @@ export default function TestCasesPage() {
     setRefreshing(false)
   }
 
-  useEffect(() => { loadModules() }, [])
+  useEffect(() => {
+    loadModules().then(() => {
+      // 首次打开且缓存为空 → 自动收集
+      if (modules.length === 0) handleRefresh()
+    })
+  }, [])
 
   return (
     <div className="p-6 space-y-4">
@@ -85,9 +90,10 @@ export default function TestCasesPage() {
         <div className="w-64 flex-shrink-0 bg-surface rounded-lg p-3 space-y-1 max-h-[70vh] overflow-auto">
           <h3 className="text-xs text-gray-400 uppercase tracking-wider px-3 py-2">测试模块</h3>
           {modules.length === 0 && !loading && (
-            <p className="text-gray-500 text-sm px-3 py-4">
-              暂无用例缓存，请点击"手动刷新用例"
-            </p>
+            <button onClick={handleRefresh} className="w-full text-left px-3 py-6 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors">
+              <p className="text-primary text-sm font-medium">暂无用例缓存</p>
+              <p className="text-gray-500 text-xs mt-1">点击此处立即收集</p>
+            </button>
           )}
           {modules.map((m) => (
             <button
