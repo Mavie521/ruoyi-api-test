@@ -22,8 +22,25 @@ from .routers import project_routes, run_routes, report_routes, environment_rout
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """启动时建表，关闭时清理连接"""
+    """启动时建表 + 清理孤儿进程/卡住任务，关闭时清理连接"""
     init_db()
+
+    # 清理上一个 uvicorn 实例残留的孤儿 pytest 进程
+    import subprocess, platform
+    try:
+        if platform.system() == "Windows":
+            subprocess.run(["taskkill", "/F", "/IM", "pytest.exe"], capture_output=True)
+        else:
+            subprocess.run(["pkill", "-f", "pytest"], capture_output=True)
+    except Exception:
+        pass
+
+    # 重置所有 running 状态为 error
+    from .database import _get_conn
+    c = _get_conn()
+    c.execute("UPDATE runs SET status='error', output_log=COALESCE(output_log,'')||'\n[系统] uvicorn重启，任务被中断' WHERE status='running'")
+    c.commit()
+
     yield
     close_db()
 
