@@ -118,7 +118,7 @@ async def rerun_failed(run_id: int):
         raise HTTPException(status_code=409, detail="已有测试任务正在执行中")
 
     # 从 run_results 中提取失败的 nodeid
-    results = get_results(run_id, outcome="failed")
+    results = get_results(run_id, outcome="failed") + get_results(run_id, outcome="error")
     if not results:
         raise HTTPException(status_code=400, detail="没有失败的用例可重跑")
 

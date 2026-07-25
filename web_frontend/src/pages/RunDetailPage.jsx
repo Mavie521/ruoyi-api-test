@@ -118,7 +118,7 @@ export default function RunDetailPage() {
           </>
         )}
         {/* 重跑失败用例 */}
-        {run.failed_tests > 0 && run.status !== 'running' && (
+        {(run.failed_tests > 0 || run.error_tests > 0) && run.status !== 'running' && (
           <>
             <button
               onClick={async () => {
