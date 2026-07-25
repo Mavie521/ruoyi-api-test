@@ -5,7 +5,9 @@ export default function EnvironmentPage() {
   const [envs, setEnvs] = useState(null)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ name: '', base_url: '', description: '' })
-  const [pingResult, setPingResult] = useState({})
+  const [pingResult, setPingResult] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('env_ping_cache') || '{}') } catch { return {} }
+  })
 
   const load = async () => {
     const res = await api.get('/api/environments')
@@ -37,7 +39,9 @@ export default function EnvironmentPage() {
   const handlePing = async (id) => {
     const res = await api.post(`/api/environments/${id}/ping`)
     if (res?.data) {
-      setPingResult((prev) => ({ ...prev, [id]: res.data }))
+      const next = { ...pingResult, [id]: { ...res.data, time: Date.now() } }
+      setPingResult(next)
+      localStorage.setItem('env_ping_cache', JSON.stringify(next))
     }
   }
 
@@ -101,9 +105,16 @@ export default function EnvironmentPage() {
                   <td className="py-2.5 px-4 text-gray-500">{env.description || '—'}</td>
                   <td className="py-2.5 px-4">
                     {pingResult[env.id] ? (
-                      pingResult[env.id].alive
-                        ? <span className="badge-passed">在线 ({pingResult[env.id].status_code})</span>
-                        : <span className="badge-failed">不可达</span>
+                      <div>
+                        {pingResult[env.id].alive
+                          ? <span className="badge-passed">在线 ({pingResult[env.id].status_code})</span>
+                          : <span className="badge-failed">{pingResult[env.id].error || '不可达'}</span>}
+                        {pingResult[env.id].time && (
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {new Date(pingResult[env.id].time).toLocaleTimeString('zh-CN')}
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-gray-500">—</span>
                     )}
