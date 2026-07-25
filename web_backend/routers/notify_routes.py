@@ -39,5 +39,6 @@ async def test_notify():
         total=1, passed=1, failed=0,
         duration=0.1,
         report_url="",
+        force=True,  # 测试发送跳过 enabled 检查
     )
     return {"code": 200, "message": "测试消息已发送" if ok else "发送失败，请检查配置", "data": {"sent": ok}}
