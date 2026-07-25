@@ -112,11 +112,12 @@ async def execute_pytest(
 
         cmd = [
             sys.executable, "-m", "pytest",
-            test_path,
             f"--alluredir={str(allure_results_dir)}",
             f"--junitxml={str(junit_path)}",
             "-v", "--tb=short",
         ]
+        if test_path:
+            cmd.extend(test_path.split())  # 支持多个路径，如 "tests/test_a.py::f1 tests/test_b.py::f2"
 
         if markers:
             cmd.extend(["-m", markers])

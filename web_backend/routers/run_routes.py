@@ -126,15 +126,14 @@ async def rerun_failed(run_id: int):
     if not failed_nodes:
         raise HTTPException(status_code=400, detail="失败用例缺少 nodeid")
 
-    # 用 nodeid 拼接成 pytest 关键字（空格分隔）
-    keywords = " or ".join(failed_nodes)
-
+    # 把失败用例 nodeid 作为 pytest 位置参数直接传入
+    # pytest tests/test_role.py::TestRole::test_create_role tests/test_user.py::TestUser::test_delete
     asyncio.create_task(
         execute_pytest(
             environment=run.get("environment", "dev"),
-            test_path="",          # 不传 test_path，全靠 -k
-            keyword=run.get("keyword", ""),
-            extra_args=f"-k \"{keywords}\"",
+            test_path=" ".join(failed_nodes),  # 直接传 nodeid 列表
+            keyword="",
+            extra_args="",
         )
     )
     return {"code": 200, "message": f"已提交重跑 {len(failed_nodes)} 条失败用例", "data": {"count": len(failed_nodes)}}
