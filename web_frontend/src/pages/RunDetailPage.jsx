@@ -51,7 +51,7 @@ export default function RunDetailPage() {
   if (!run) {
     return (
       <div className="p-6 flex items-center justify-center h-full">
-        <div className="flex justify-center py-16"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
+        <div className="p-6" />
       </div>
     )
   }

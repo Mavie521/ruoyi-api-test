@@ -74,9 +74,7 @@ export default function ReportPage() {
           </button>
 
           {loading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <div className="p-6" />
           ) : reports.length === 0 ? (
             <div className="text-gray-500 text-center py-16 space-y-2">
               <p className="text-4xl">📭</p>

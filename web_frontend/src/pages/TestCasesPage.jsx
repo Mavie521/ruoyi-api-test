@@ -105,7 +105,7 @@ export default function TestCasesPage() {
                 {selectedModule} <span className="text-gray-500 font-normal">({cases.length} 条用例)</span>
               </h3>
               {loading ? (
-                <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
+                <div className="p-6" />
               ) : cases.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">该模块下暂无用例（或缓存为空）</p>
               ) : (

@@ -28,13 +28,7 @@ export default function DashboardPage() {
 
   const passRatePct = stats ? `${(stats.pass_rate * 100).toFixed(1)}%` : '—'
 
-  if (!stats) {
-    return (
-      <div className="p-6 flex justify-center pt-32">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    )
-  }
+  if (!stats) return <div className="p-6" />
 
   return (
     <div className="p-6 space-y-6">
