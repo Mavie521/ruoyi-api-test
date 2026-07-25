@@ -168,7 +168,7 @@ export default function MockPage() {
               <div className="col-span-2">
                 <label className="block text-xs text-gray-400 mb-1">路径（不含 /mock/ 前缀）</label>
                 <input value={form.path} onChange={e => setForm({...form, path: e.target.value})}
-                  placeholder="api/user/info"
+                  placeholder="api/user/info  支持通配符 * 如 api/user/*"
                   className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-primary" />
               </div>
               <div>

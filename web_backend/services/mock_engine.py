@@ -1,7 +1,15 @@
 """Mock 规则匹配引擎 —— 匹配请求路径和方法，返回预设响应"""
 import json
+import re
 import time
 from ..database import list_mock_rules, insert_mock_log
+
+
+def _wildcard_match(pattern: str, actual: str) -> bool:
+    """通配符匹配：* 匹配任意路径段，支持 /user/* /api/*/info"""
+    # 将 * 替换为正则 [^/]+（匹配单段路径）
+    regex = "^" + re.escape(pattern).replace(r"\*", r"[^/]+") + "$"
+    return bool(re.match(regex, actual))
 
 
 def match_and_respond(path: str, method: str, body: str = "",
@@ -11,25 +19,34 @@ def match_and_respond(path: str, method: str, body: str = "",
 
     匹配规则:
       1. 只查 enabled=1 的规则
-      2. 精确匹配 path + method
+      2. 先精确匹配 path + method，再通配符 * 匹配
       3. 未命中返回 404
+
+    通配符: /user/* 匹配 /user/123, /api/*/info 匹配 /api/order/info
 
     返回:
       (status_code, response_body, matched_rule_name, match_result)
-
-    delay_ms 处理:
-      如果规则设置了延迟，阻塞等待后再返回
     """
     rules = list_mock_rules()
     enabled = [r for r in rules if r.get("enabled")]
 
-    # 精确匹配 path + method（统一去前导 / 比较）
-    normalized_path = path.lstrip("/")
+    normalized = path.lstrip("/")
+
+    # 第一轮：精确匹配
     matched = None
     for rule in enabled:
-        if rule["path"].lstrip("/") == normalized_path and rule["http_method"].upper() == method.upper():
+        if rule["path"].lstrip("/") == normalized and rule["http_method"].upper() == method.upper():
             matched = rule
             break
+
+    # 第二轮：通配符匹配
+    if not matched:
+        for rule in enabled:
+            rule_path = rule["path"].lstrip("/")
+            if "*" in rule_path and rule["http_method"].upper() == method.upper():
+                if _wildcard_match(rule_path, normalized):
+                    matched = rule
+                    break
 
     if matched:
         # 模拟延迟
