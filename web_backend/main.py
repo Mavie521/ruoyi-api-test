@@ -86,10 +86,22 @@ async def env_options():
 if REPORTS_DIR.exists():
     app.mount("/allure", StaticFiles(directory=str(REPORTS_DIR)), name="allure_static")
 
-# 前端 SPA 静态文件（prod 模式下挂载）
+# 前端 SPA 静态文件
 frontend_dir = PROJECT_ROOT / "web_frontend" / "dist"
 if frontend_dir.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
+    # JS/CSS 等静态资源
+    app.mount("/assets", StaticFiles(directory=str(frontend_dir / "assets")), name="frontend_assets")
+
+    # SPA 兜底：所有非 API/Allure 请求回退到 index.html
+    from fastapi.responses import FileResponse
+    index_path = frontend_dir / "index.html"
+
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str):
+        """SPA fallback: 让 React Router 处理前端路由"""
+        if index_path.exists():
+            return FileResponse(str(index_path), media_type="text/html")
+        return {"code": 404, "message": "前端未构建，请运行 npm run build"}
 
 
 # ── 直接运行入口 ──
