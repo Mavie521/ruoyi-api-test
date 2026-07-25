@@ -134,6 +134,9 @@ async def execute_pytest(
             sub_env = {**os.environ, "ENV": environment}
             if base_url:
                 sub_env["BASE_URL"] = base_url
+                output_lines.append(f"[CONFIG] 使用环境 {environment} 的 BASE_URL={base_url}")
+            else:
+                output_lines.append(f"[CONFIG] 使用默认 BASE_URL={sub_env.get('BASE_URL', '未设置')}")
             output = await loop.run_in_executor(
                 _executor,
                 _run_pytest_sync,

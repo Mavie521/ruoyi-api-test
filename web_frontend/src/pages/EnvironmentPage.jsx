@@ -108,7 +108,7 @@ export default function EnvironmentPage() {
                       <div>
                         {pingResult[env.id].alive
                           ? <span className="badge-passed">在线 ({pingResult[env.id].status_code})</span>
-                          : <span className="badge-failed">{pingResult[env.id].error || '不可达'}</span>}
+                          : <span className="badge-failed" title={pingResult[env.id].error}>连接失败</span>}
                         {pingResult[env.id].time && (
                           <div className="text-xs text-gray-500 mt-0.5">
                             {new Date(pingResult[env.id].time).toLocaleTimeString('zh-CN')}
