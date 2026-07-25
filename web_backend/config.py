@@ -58,6 +58,9 @@ AI_API_URL = _os.getenv("AI_API_URL", "https://api.deepseek.com/v1/chat/completi
 AI_API_KEY = _os.getenv("AI_API_KEY", "")
 AI_MODEL = _os.getenv("AI_MODEL", "deepseek-v4-flash")
 
+# 数据库敏感字段加密（生成密钥: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"）
+ENCRYPTION_KEY = _os.getenv("ENCRYPTION_KEY", "")
+
 ENV_OPTIONS = ["dev", "staging", "prod", "docker"]  # 环境下拉选项
 
 # ============================================================

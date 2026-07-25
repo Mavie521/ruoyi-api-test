@@ -399,18 +399,24 @@ def delete_environment(env_id: int):
 # ============================================================
 
 def get_dingtalk_config() -> dict:
+    from utils.crypto_utils import decrypt
     row = _get_conn().execute("SELECT * FROM dingtalk_config WHERE id=1").fetchone()
     if not row:
         # 首次自动创建默认行
         _get_conn().execute("INSERT INTO dingtalk_config (id) VALUES (1)")
         _get_conn().commit()
         row = _get_conn().execute("SELECT * FROM dingtalk_config WHERE id=1").fetchone()
-    return dict(row)
+    config = dict(row)
+    config["secret"] = decrypt(config.get("secret", ""))
+    return config
 
 
 def update_dingtalk_config(**kwargs) -> bool:
+    from utils.crypto_utils import encrypt
     allowed = {"webhook_url", "secret", "enabled", "notify_on"}
     updates = {k: v for k, v in kwargs.items() if k in allowed}
+    if "secret" in updates and updates["secret"]:
+        updates["secret"] = encrypt(updates["secret"])
     if not updates:
         return False
     sets = ", ".join(f"{k}=?" for k in updates)
