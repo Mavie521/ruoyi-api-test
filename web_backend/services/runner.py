@@ -129,15 +129,13 @@ async def execute_pytest(
         update_run(run_id, status="running", started_at=started_at)
 
         try:
-            loop = asyncio.get_event_loop()
             sub_env = {**os.environ, "ENV": environment}
             if base_url:
                 sub_env["BASE_URL"] = base_url
                 output_lines.append(f"[CONFIG] 使用环境 {environment} 的 BASE_URL={base_url}")
             else:
                 output_lines.append(f"[CONFIG] 使用默认 BASE_URL={sub_env.get('BASE_URL', '未设置')}")
-            output = await loop.run_in_executor(
-                None,
+            output = await asyncio.to_thread(
                 _run_pytest_sync,
                 cmd,
                 str(PROJECT_ROOT),
@@ -197,10 +195,8 @@ async def execute_pytest(
 async def _generate_allure(results_dir: Path, report_dir: Path):
     """调用 allure generate 生成离线 HTML 报告"""
     try:
-        loop = asyncio.get_event_loop()
         report_dir.mkdir(parents=True, exist_ok=True)
-        await loop.run_in_executor(
-            None,
+        await asyncio.to_thread(
             lambda: subprocess.run(
                 ["allure", "generate", str(results_dir), "-o", str(report_dir), "--clean"],
                 cwd=str(PROJECT_ROOT),
