@@ -13,7 +13,7 @@
 import sys
 from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from .config import CORS_ORIGINS, PROJECT_ROOT, REPORTS_DIR
 from .database import init_db, close_db
@@ -81,10 +81,9 @@ async def env_options():
     return {"code": 200, "message": "success", "data": {"options": ENV_OPTIONS}}
 
 
-# ── 静态文件挂载（注册在最后，防止抢占业务路由） ──
-
-# 兜底路由：统一处理 allure 报告 + 前端 SPA 静态资源
-from fastapi.responses import FileResponse
+# ── 前端 SPA + Allure 静态资源：404 exception handler ──
+# 不使用路由兜底（会拦截 API），改用 404 处理器
+from fastapi.responses import FileResponse, JSONResponse
 
 MIME_MAP = {".js": "application/javascript", ".css": "text/css",
             ".html": "text/html", ".json": "application/json",
@@ -94,37 +93,36 @@ MIME_MAP = {".js": "application/javascript", ".css": "text/css",
 frontend_dir = PROJECT_ROOT / "web_frontend" / "dist"
 
 
-@app.get("/{full_path:path}")
-async def catch_all(full_path: str):
-    """统一处理 allure 报告 + SPA 前端"""
+@app.exception_handler(404)
+async def spa_fallback(request: Request, exc):
+    """404 时：尝试返回文件，否则回退到 index.html 用于 SPA"""
 
-    # 1. Allure 报告路径: /allure/allure-report-{tag}/...
-    if full_path.startswith("allure/"):
-        file_path = REPORTS_DIR / full_path[len("allure/"):]
-        try:
-            file_path.resolve().relative_to(REPORTS_DIR.resolve())
-        except ValueError:
-            return {"code": 403}
-        if file_path.is_file():
-            return FileResponse(str(file_path), media_type=MIME_MAP.get(file_path.suffix))
-        return {"code": 404}
+    path = request.url.path.lstrip("/")
 
-    # 2. 前端静态资源 + SPA
+    # 1. Allure 报告: /allure/allure-report-{tag}/...
+    if path.startswith("allure/"):
+        fp = REPORTS_DIR / path[len("allure/"):]
+        try: fp.resolve().relative_to(REPORTS_DIR.resolve())
+        except ValueError: return JSONResponse({"code": 403}, status_code=403)
+        if fp.is_file():
+            return FileResponse(str(fp), media_type=MIME_MAP.get(fp.suffix))
+
+    # 2. 前端 dist/ 静态资源
     if frontend_dir.exists():
-        file_path = frontend_dir / full_path
-        try:
-            file_path.resolve().relative_to(frontend_dir.resolve())
-        except ValueError:
-            return {"code": 403}
+        fp = frontend_dir / path
+        try: fp.resolve().relative_to(frontend_dir.resolve())
+        except ValueError: pass
+        else:
+            if fp.is_file():
+                return FileResponse(str(fp), media_type=MIME_MAP.get(fp.suffix))
 
-        if file_path.is_file():
-            return FileResponse(str(file_path), media_type=MIME_MAP.get(file_path.suffix))
+        # 3. SPA fallback
+        idx = frontend_dir / "index.html"
+        if idx.exists():
+            return FileResponse(str(idx), media_type="text/html")
 
-        index_path = frontend_dir / "index.html"
-        if index_path.exists():
-            return FileResponse(str(index_path), media_type="text/html")
+    return JSONResponse({"code": 404, "message": "Not Found"}, status_code=404)
 
-    return {"code": 404, "message": "Not Found"}
 
 
 # ── 直接运行入口 ──
