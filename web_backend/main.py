@@ -13,7 +13,7 @@
 import sys
 from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from .config import CORS_ORIGINS, PROJECT_ROOT, REPORTS_DIR
 from .database import init_db, close_db
@@ -111,7 +111,7 @@ async def mock_entry(mock_path: str, request: Request):
     """Mock 统一入口 —— 接收任意 HTTP 方法的请求，匹配规则"""
     # 空路径（如 /mock/ 或 /mock）→ 交给 SPA 兜底，不匹配 Mock 规则
     if not mock_path or mock_path == "/":
-        return JSONResponse({"code": 404, "message": "Mock path required, e.g. /mock/api/user"}, status_code=404)
+        raise HTTPException(status_code=404)
 
     from .services.mock_engine import match_and_respond
     import json
