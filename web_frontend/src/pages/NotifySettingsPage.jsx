@@ -58,6 +58,9 @@ export default function NotifySettingsPage() {
           <input type="text" value={form.secret} onChange={(e) => setForm({ ...form, secret: e.target.value })}
             placeholder="SEC..."
             className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary placeholder-gray-600" />
+          {form.webhook_url && !form.secret && (
+            <p className="text-xs text-amber-400 mt-1">⚠ 如机器人开启了加签，请填写 Secret，否则消息无法发送</p>
+          )}
         </div>
 
         <div className="flex items-center gap-6">
