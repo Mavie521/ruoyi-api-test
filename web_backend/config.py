@@ -51,10 +51,12 @@ PYTEST_TIMEOUT = 600               # 单个测试任务超时（秒）
 PLATFORM_URL = "http://192.168.149.100:8001"
 
 # AI 失败分析配置（OpenAI 兼容接口）
-AI_ENABLED = False                         # 是否启用 AI 分析
-AI_API_URL = "https://api.openai.com/v1/chat/completions"  # 兼容 Claude API 等
-AI_API_KEY = ""                            # API Key
-AI_MODEL = "gpt-3.5-turbo"                 # 模型名
+# AI 失败分析配置（OpenAI 兼容接口）
+import os as _os
+AI_ENABLED = _os.getenv("AI_ENABLED", "0") == "1"
+AI_API_URL = _os.getenv("AI_API_URL", "https://api.deepseek.com/v1/chat/completions")
+AI_API_KEY = _os.getenv("AI_API_KEY", "")
+AI_MODEL = _os.getenv("AI_MODEL", "deepseek-chat")
 
 ENV_OPTIONS = ["dev", "staging", "prod", "docker"]  # 环境下拉选项
 
