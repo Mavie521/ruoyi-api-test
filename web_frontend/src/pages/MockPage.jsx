@@ -18,6 +18,7 @@ export default function MockPage() {
   }
 
   const handleSave = async () => {
+    try { JSON.parse(form.response_body) } catch { alert('响应 JSON 格式错误，请修正'); return }
     if (editing?.id) {
       await api.put(`/api/mock/rules/${editing.id}`, form)
     } else {
