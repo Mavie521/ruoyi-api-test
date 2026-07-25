@@ -56,7 +56,7 @@ import os as _os
 AI_ENABLED = _os.getenv("AI_ENABLED", "0") == "1"
 AI_API_URL = _os.getenv("AI_API_URL", "https://api.deepseek.com/v1/chat/completions")
 AI_API_KEY = _os.getenv("AI_API_KEY", "")
-AI_MODEL = _os.getenv("AI_MODEL", "deepseek-chat")
+AI_MODEL = _os.getenv("AI_MODEL", "deepseek-v4-flash")
 
 ENV_OPTIONS = ["dev", "staging", "prod", "docker"]  # 环境下拉选项
 
