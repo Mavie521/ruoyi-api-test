@@ -139,6 +139,21 @@ async def rerun_failed(run_id: int):
     return {"code": 200, "message": f"已提交重跑 {len(failed_nodes)} 条失败用例", "data": {"count": len(failed_nodes)}}
 
 
+@router.post("/debug-run")
+async def debug_run():
+    """同步调试接口：直接跑 pytest 并返回完整输出，不写数据库"""
+    import subprocess, sys, os
+    from ..config import PROJECT_ROOT
+    cmd = [sys.executable, "-m", "pytest", "tests/test_role.py::TestRole::test_list_roles", "-v", "--tb=short"]
+    result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=True, text=True, timeout=30,
+                            env={**os.environ, "BASE_URL": "http://localhost:8080"})
+    return {"code": 200, "data": {
+        "rc": result.returncode,
+        "stdout": result.stdout[-2000:],
+        "stderr": result.stderr[-1000:],
+    }}
+
+
 @router.post("/clear-stuck")
 async def clear_stuck():
     """清除所有卡住的 running 任务"""
