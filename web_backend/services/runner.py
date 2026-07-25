@@ -173,7 +173,7 @@ async def execute_pytest(
             error_tests=summary["error"],
             duration_sec=summary["duration"],
             finished_at=finished_at,
-            output_log=output,
+            output_log="\n".join(output_lines) + "\n" + output,
             allure_dir=str(allure_report_dir.relative_to(PROJECT_ROOT)),
         )
 
