@@ -6,7 +6,7 @@ export default function ReportPage() {
   const [searchParams] = useSearchParams()
   const [reports, setReports] = useState([])
   const [selectedTag, setSelectedTag] = useState(searchParams.get('tag') || '')
-  const [loading, setLoading] = useState(true)  // 初始 loading，避免闪现"暂无报告"
+  const [loading, setLoading] = useState(true)
 
   const loadReports = async () => {
     setLoading(true)
@@ -73,7 +73,11 @@ export default function ReportPage() {
             {loading ? '加载中...' : '🔄 刷新列表'}
           </button>
 
-          {reports.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : reports.length === 0 ? (
             <div className="text-gray-500 text-center py-16 space-y-2">
               <p className="text-4xl">📭</p>
               <p>暂无可用报告</p>

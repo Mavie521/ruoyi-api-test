@@ -59,7 +59,9 @@ export default function RunHistoryPage() {
       </div>
 
       {runs === null ? (
-        <p className="text-gray-500 text-center py-16">加载中...</p>
+        <div className="flex justify-center py-16">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
       ) : runs.length === 0 ? (
         <p className="text-gray-500 text-center py-16">暂无执行记录</p>
       ) : (
