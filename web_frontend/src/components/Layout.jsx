@@ -20,7 +20,7 @@ export default function Layout({ children }) {
       <aside className="w-56 bg-surface flex-shrink-0 flex flex-col border-r border-gray-700">
         <div className="p-5 border-b border-gray-700">
           <h1 className="text-lg font-bold text-primary flex items-center gap-2">
-            <span>🧪</span> 若依API测试
+            <span>🧪</span> @Mavie521
           </h1>
           <p className="text-xs text-gray-400 mt-1">Web 测试管理平台</p>
         </div>
