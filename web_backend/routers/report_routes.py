@@ -37,16 +37,6 @@ async def list_reports():
     }
 
 
-@router.get("/{tag}")
-async def serve_report(tag: str):
-    """服务 Allure 报告首页"""
-    report_dir = REPORTS_DIR / f"allure-report-{tag}"
-    index_path = report_dir / "index.html"
-    if not index_path.exists():
-        return {"code": 404, "message": f"报告 {tag} 不存在", "data": None}
-    return FileResponse(str(index_path))
-
-
 @router.get("/{tag}/{rest_path:path}")
 async def serve_report_assets(tag: str, rest_path: str):
     """服务 Allure 报告的静态资源（JS/CSS/JSON/图片）"""
@@ -60,3 +50,13 @@ async def serve_report_assets(tag: str, rest_path: str):
     if not file_path.exists():
         return {"code": 404, "message": "文件不存在", "data": None}
     return FileResponse(str(file_path))
+
+
+@router.get("/{tag}")
+async def serve_report(tag: str):
+    """服务 Allure 报告首页"""
+    report_dir = REPORTS_DIR / f"allure-report-{tag}"
+    index_path = report_dir / "index.html"
+    if not index_path.exists():
+        return {"code": 404, "message": f"报告 {tag} 不存在", "data": None}
+    return FileResponse(str(index_path))
