@@ -28,6 +28,14 @@ export default function DashboardPage() {
 
   const passRatePct = stats ? `${(stats.pass_rate * 100).toFixed(1)}%` : '—'
 
+  if (!stats) {
+    return (
+      <div className="p-6 flex justify-center pt-32">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -42,15 +50,15 @@ export default function DashboardPage() {
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-4 gap-4">
-        <StatCard title="总执行次数" value={stats?.runs_total ?? '—'} icon="📊" color="blue" />
+        <StatCard title="总执行次数" value={stats.runs_total} icon="📊" color="blue" />
         <StatCard title="通过率" value={passRatePct} icon="📈" color="green" />
-        <StatCard title="缓存用例数" value={stats?.case_count ?? '—'} icon="📋" color="purple" />
+        <StatCard title="缓存用例数" value={stats.case_count} icon="📋" color="purple" />
         <StatCard
           title="最近执行"
-          value={stats?.latest_run ? statusMap[stats.latest_run.status]?.label : '无'}
-          icon={stats?.latest_run?.status === 'passed' ? '✅' : '❌'}
-          color={stats?.latest_run?.status === 'passed' ? 'green' : 'red'}
-          subtitle={stats?.latest_run?.run_tag}
+          value={stats.latest_run ? statusMap[stats.latest_run.status]?.label : '无'}
+          icon={stats.latest_run?.status === 'passed' ? '✅' : '❌'}
+          color={stats.latest_run?.status === 'passed' ? 'green' : 'red'}
+          subtitle={stats.latest_run?.run_tag}
         />
       </div>
 
