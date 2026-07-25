@@ -47,8 +47,14 @@ coverage.xml
 # pre-commit
 .pre-commit-config.yaml.bak
 
+# Web 平台运行时文件
+cache/*.db
+web_frontend/node_modules/
+web_frontend/dist/
+
 # 保留目录结构
 !reports/allure-results/.gitkeep
 !reports/.gitkeep
 !logs/.gitkeep
 !data/.gitkeep
+!cache/.gitkeep

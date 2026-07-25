@@ -13,7 +13,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: ry-vue
       MYSQL_CHARACTER_SET_SERVER: utf8mb4
-      MYSQL_COLLATION_SERVER: utf8mb4_general_ci
+      MYSQL_COLLATION_SERVER: utf8mb4_general_ci  
     ports:
       - "3307:3306"
     volumes:
@@ -61,7 +61,8 @@ services:
       RUOYI_NAME: RuoYi
       RUOYI_VERSION: 3.9.2
       RUOYI_PROFILE: /home/ruoyi/uploadPath
-    # 不对外暴露 8080，仅 Docker 内部网络访问（ruoyi-api:8080）
+    ports:
+      - "8080:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/ >/dev/null 2>&1 || curl -sf http://localhost:8080/login >/dev/null 2>&1 || exit 1"]
       interval: 15s
@@ -92,10 +93,13 @@ services:
       DB_PASSWORD: root
     volumes:
       - ./tests:/app/tests
+      - ./testcases:/app/testcases
+      - ./api:/app/api
+      - ./utils:/app/utils
+      - ./config:/app/config
       - ./reports:/app/reports
       - ./logs:/app/logs
       - ./data:/app/data
-      # testcases/ 不挂载 volume —— 直接从镜像内 COPY . . 提供
     networks:
       - ry-network
 
