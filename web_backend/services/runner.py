@@ -70,6 +70,7 @@ async def execute_pytest(
     test_path: str = "tests/",
     keyword: str = "",
     extra_args: str = "",
+    base_url: str = "",
 ) -> dict:
     """
     异步执行 pytest（线程池 + subprocess.Popen）
@@ -130,13 +131,16 @@ async def execute_pytest(
 
         try:
             loop = asyncio.get_event_loop()
+            sub_env = {**os.environ, "ENV": environment}
+            if base_url:
+                sub_env["BASE_URL"] = base_url
             output = await loop.run_in_executor(
                 _executor,
                 _run_pytest_sync,
                 cmd,
                 str(PROJECT_ROOT),
                 PYTEST_TIMEOUT,
-                {**os.environ, "ENV": environment},
+                sub_env,
             )
         except Exception as exc:
             import traceback

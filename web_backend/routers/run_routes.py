@@ -23,6 +23,7 @@ class RunRequest(BaseModel):
     test_path: str = "tests/"
     keyword: str = ""
     extra_args: str = ""
+    base_url: str = ""
 
 
 @router.post("")
@@ -50,6 +51,7 @@ async def trigger_run(req: RunRequest):
             test_path=req.test_path,
             keyword=req.keyword,
             extra_args=req.extra_args,
+            base_url=req.base_url,
         )
     )
 

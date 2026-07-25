@@ -76,9 +76,13 @@ async def dashboard_stats():
 
 @app.get("/api/environment/options", tags=["系统"])
 async def env_options():
-    """环境下拉选项（一期硬编码）"""
-    from .config import ENV_OPTIONS
-    return {"code": 200, "message": "success", "data": {"options": ENV_OPTIONS}}
+    """环境下拉选项（从数据库 environments 表读取）"""
+    from .database import list_environments
+    envs = list_environments()
+    if not envs:
+        from .config import ENV_OPTIONS
+        return {"code": 200, "message": "success", "data": {"options": ENV_OPTIONS}}
+    return {"code": 200, "message": "success", "data": {"environments": envs}}}
 
 
 # ── 前端 SPA + Allure 静态资源：404 exception handler ──

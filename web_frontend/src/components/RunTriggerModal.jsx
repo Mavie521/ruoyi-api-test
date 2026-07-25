@@ -2,22 +2,38 @@ import { useState, useEffect } from 'react'
 import api from '../api/client.js'
 
 export default function RunTriggerModal({ isOpen, onClose, onSuccess }) {
-  const [envOptions, setEnvOptions] = useState(['dev', 'staging', 'prod', 'docker'])
+  const [envOptions, setEnvOptions] = useState([])
   const [form, setForm] = useState({
     environment: 'dev',
     markers: '',
     test_path: 'tests/',
     keyword: '',
     extra_args: '',
+    base_url: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
     api.getEnvOptions()
-      .then((res) => { if (res?.data?.options) setEnvOptions(res.data.options) })
+      .then((res) => {
+        if (res?.data?.environments) {
+          setEnvOptions(res.data.environments)
+        } else if (res?.data?.options) {
+          setEnvOptions(res.data.options.map(n => ({ name: n, base_url: '' })))
+        }
+      })
       .catch(() => {})
   }, [])
+
+  const handleEnvChange = (envName) => {
+    const selected = envOptions.find(e => e.name === envName)
+    setForm({
+      ...form,
+      environment: envName,
+      base_url: selected?.base_url || '',
+    })
+  }
 
   if (!isOpen) return null
 
@@ -59,11 +75,13 @@ export default function RunTriggerModal({ isOpen, onClose, onSuccess }) {
             <label className="block text-sm text-gray-400 mb-1">测试环境</label>
             <select
               value={form.environment}
-              onChange={(e) => handleChange('environment', e.target.value)}
+              onChange={(e) => handleEnvChange(e.target.value)}
               className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
             >
               {envOptions.map((env) => (
-                <option key={env} value={env}>{env}</option>
+                <option key={env.name || env} value={env.name || env}>
+                  {env.name || env}{env.base_url ? ` (${env.base_url})` : ''}
+                </option>
               ))}
             </select>
           </div>
