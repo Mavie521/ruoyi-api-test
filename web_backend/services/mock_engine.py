@@ -23,10 +23,11 @@ def match_and_respond(path: str, method: str, body: str = "",
     rules = list_mock_rules()
     enabled = [r for r in rules if r.get("enabled")]
 
-    # 精确匹配 path + method
+    # 精确匹配 path + method（统一去前导 / 比较）
+    normalized_path = path.lstrip("/")
     matched = None
     for rule in enabled:
-        if rule["path"] == path and rule["http_method"].upper() == method.upper():
+        if rule["path"].lstrip("/") == normalized_path and rule["http_method"].upper() == method.upper():
             matched = rule
             break
 
