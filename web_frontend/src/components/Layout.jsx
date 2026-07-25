@@ -7,6 +7,11 @@ const navItems = [
   { to: '/reports', label: '测试报告', icon: '📈' },
 ]
 
+const toolItems = [
+  { to: '/environments', label: '环境管理', icon: '🔧' },
+  { to: '/settings/notify', label: '钉钉通知', icon: '🔔' },
+]
+
 export default function Layout({ children }) {
   return (
     <div className="flex h-screen">
@@ -36,6 +41,25 @@ export default function Layout({ children }) {
               <span>{item.label}</span>
             </NavLink>
           ))}
+          <div className="pt-3 mt-3 border-t border-gray-700">
+            <p className="px-3 py-1 text-xs text-gray-500 uppercase tracking-wider">工具</p>
+            {toolItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                    isActive
+                      ? 'bg-primary/20 text-primary font-medium'
+                      : 'text-gray-400 hover:bg-surface-light hover:text-gray-200'
+                  }`
+                }
+              >
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
         </nav>
         <div className="p-4 border-t border-gray-700 text-xs text-gray-500">
           v1.0.0 · 无鉴权模式

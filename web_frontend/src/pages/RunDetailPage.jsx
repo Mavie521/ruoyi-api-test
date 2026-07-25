@@ -117,6 +117,19 @@ export default function RunDetailPage() {
             </a>
           </>
         )}
+        {/* 重跑失败用例 */}
+        {run.failed_tests > 0 && run.status !== 'running' && (
+          <button
+            onClick={async () => {
+              const res = await api.post(`/api/runs/${id}/rerun-failed`)
+              if (res.code === 200) { alert(res.message); window.location.reload() }
+              else alert(res.message || '重跑失败')
+            }}
+            className="bg-amber-700/30 hover:bg-amber-700/50 border border-amber-600 text-amber-300 px-4 py-2 rounded-lg text-sm transition-colors"
+          >
+            🔄 重跑失败用例 ({run.failed_tests})
+          </button>
+        )}
       </div>
 
       {/* 结果过滤 */}

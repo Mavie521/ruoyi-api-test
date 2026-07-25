@@ -106,6 +106,38 @@ async def get_run_status(run_id: int):
     }
 
 
+@router.post("/{run_id}/rerun-failed")
+async def rerun_failed(run_id: int):
+    """只重跑失败用例"""
+    run = get_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="执行记录不存在")
+    if is_running():
+        raise HTTPException(status_code=409, detail="已有测试任务正在执行中")
+
+    # 从 run_results 中提取失败的 nodeid
+    results = get_results(run_id, outcome="failed")
+    if not results:
+        raise HTTPException(status_code=400, detail="没有失败的用例可重跑")
+
+    failed_nodes = [r["nodeid"] for r in results if r.get("nodeid")]
+    if not failed_nodes:
+        raise HTTPException(status_code=400, detail="失败用例缺少 nodeid")
+
+    # 用 nodeid 拼接成 pytest 关键字（空格分隔）
+    keywords = " or ".join(failed_nodes)
+
+    asyncio.create_task(
+        execute_pytest(
+            environment=run.get("environment", "dev"),
+            test_path="",          # 不传 test_path，全靠 -k
+            keyword=run.get("keyword", ""),
+            extra_args=f"-k \"{keywords}\"",
+        )
+    )
+    return {"code": 200, "message": f"已提交重跑 {len(failed_nodes)} 条失败用例", "data": {"count": len(failed_nodes)}}
+
+
 @router.delete("/{run_id}")
 async def remove_run(run_id: int):
     """删除执行记录"""

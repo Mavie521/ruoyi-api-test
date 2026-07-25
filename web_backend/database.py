@@ -81,6 +81,25 @@ def init_db():
             message      TEXT DEFAULT ''
         );
         CREATE INDEX IF NOT EXISTS idx_results_run ON run_results(run_id);
+
+        -- 环境管理表
+        CREATE TABLE IF NOT EXISTS environments (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            name        TEXT UNIQUE NOT NULL,
+            base_url    TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            is_active   INTEGER DEFAULT 1,
+            created_at  TEXT DEFAULT (datetime('now','localtime'))
+        );
+
+        -- 钉钉通知配置表
+        CREATE TABLE IF NOT EXISTS dingtalk_config (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            webhook_url TEXT NOT NULL DEFAULT '',
+            secret      TEXT NOT NULL DEFAULT '',
+            enabled     INTEGER DEFAULT 0,
+            notify_on   TEXT DEFAULT 'all'
+        );
     """)
     conn.commit()
 
@@ -294,3 +313,71 @@ def _gen_tag() -> str:
         (f"run-{today}-%",),
     ).fetchone()[0]
     return f"run-{today}-{count + 1:03d}"
+
+
+# ============================================================
+# 环境管理 CRUD
+# ============================================================
+
+def list_environments() -> list[dict]:
+    rows = _get_conn().execute("SELECT * FROM environments ORDER BY id").fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_environment(env_id: int) -> dict | None:
+    row = _get_conn().execute("SELECT * FROM environments WHERE id=?", (env_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def create_environment(name: str, base_url: str, description: str = "") -> int:
+    conn = _get_conn()
+    cur = conn.execute(
+        "INSERT INTO environments (name, base_url, description) VALUES (?, ?, ?)",
+        (name, base_url, description),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def update_environment(env_id: int, **kwargs) -> bool:
+    allowed = {"name", "base_url", "description", "is_active"}
+    updates = {k: v for k, v in kwargs.items() if k in allowed}
+    if not updates:
+        return False
+    sets = ", ".join(f"{k}=?" for k in updates)
+    vals = list(updates.values()) + [env_id]
+    _get_conn().execute(f"UPDATE environments SET {sets} WHERE id=?", vals)
+    _get_conn().commit()
+    return True
+
+
+def delete_environment(env_id: int):
+    conn = _get_conn()
+    conn.execute("DELETE FROM environments WHERE id=?", (env_id,))
+    conn.commit()
+
+
+# ============================================================
+# 钉钉配置 CRUD
+# ============================================================
+
+def get_dingtalk_config() -> dict:
+    row = _get_conn().execute("SELECT * FROM dingtalk_config WHERE id=1").fetchone()
+    if not row:
+        # 首次自动创建默认行
+        _get_conn().execute("INSERT INTO dingtalk_config (id) VALUES (1)")
+        _get_conn().commit()
+        row = _get_conn().execute("SELECT * FROM dingtalk_config WHERE id=1").fetchone()
+    return dict(row)
+
+
+def update_dingtalk_config(**kwargs) -> bool:
+    allowed = {"webhook_url", "secret", "enabled", "notify_on"}
+    updates = {k: v for k, v in kwargs.items() if k in allowed}
+    if not updates:
+        return False
+    sets = ", ".join(f"{k}=?" for k in updates)
+    vals = list(updates.values()) + [1]
+    _get_conn().execute(f"UPDATE dingtalk_config SET {sets} WHERE id=?", vals)
+    _get_conn().commit()
+    return True

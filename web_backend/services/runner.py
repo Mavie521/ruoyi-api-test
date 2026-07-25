@@ -173,6 +173,18 @@ async def execute_pytest(
         # ── 7. 生成 Allure 报告（同步方式） ──
         await _generate_allure(allure_results_dir, allure_report_dir)
 
+        # ── 8. 钉钉通知 ──
+        try:
+            from .dingtalk import send_notification
+            send_notification(
+                run_tag=tag, status=status,
+                total=summary["total"], passed=summary["passed"],
+                failed=summary["failed"], duration=summary["duration"],
+                report_url=f"http://localhost:8001/api/reports/{tag}",
+            )
+        except Exception:
+            pass
+
         return get_full_run(run_id)
 
 

@@ -5,6 +5,8 @@ import TestCasesPage from './pages/TestCasesPage.jsx'
 import RunHistoryPage from './pages/RunHistoryPage.jsx'
 import RunDetailPage from './pages/RunDetailPage.jsx'
 import ReportPage from './pages/ReportPage.jsx'
+import EnvironmentPage from './pages/EnvironmentPage.jsx'
+import NotifySettingsPage from './pages/NotifySettingsPage.jsx'
 
 export default function App() {
   return (
@@ -15,6 +17,8 @@ export default function App() {
         <Route path="/runs" element={<RunHistoryPage />} />
         <Route path="/runs/:id" element={<RunDetailPage />} />
         <Route path="/reports" element={<ReportPage />} />
+        <Route path="/environments" element={<EnvironmentPage />} />
+        <Route path="/settings/notify" element={<NotifySettingsPage />} />
       </Routes>
     </Layout>
   )

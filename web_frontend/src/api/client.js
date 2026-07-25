@@ -41,6 +41,12 @@ const api = {
   getHealth:        ()           => request('/api/health'),
   getDashboard:     ()           => request('/api/dashboard/stats'),
   getEnvOptions:    ()           => request('/api/environment/options'),
+
+  // 通用方法（环境管理、钉钉配置等用）
+  get:              (path)       => request(path),
+  post:             (path, body) => request(path, { method: 'POST', body }),
+  put:              (path, body) => request(path, { method: 'PUT', body }),
+  delete:           (path)       => request(path, { method: 'DELETE' }),
 }
 
 export default api

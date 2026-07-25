@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import CORS_ORIGINS, PROJECT_ROOT, REPORTS_DIR
 from .database import init_db, close_db
-from .routers import project_routes, run_routes, report_routes
+from .routers import project_routes, run_routes, report_routes, environment_routes, notify_routes
 
 
 @asynccontextmanager
@@ -48,6 +48,8 @@ app.add_middleware(
 app.include_router(project_routes.router, prefix="/api/projects", tags=["用例浏览"])
 app.include_router(run_routes.router, prefix="/api/runs", tags=["执行管理"])
 app.include_router(report_routes.router, prefix="/api/reports", tags=["报告服务"])
+app.include_router(environment_routes.router, prefix="/api/environments", tags=["环境管理"])
+app.include_router(notify_routes.router, prefix="/api/notify/dingtalk", tags=["钉钉通知"])
 
 
 # ── 系统接口 ──
