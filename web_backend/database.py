@@ -324,7 +324,7 @@ def list_environments() -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def get_environment(env_id: int) -> dict | None:
+def get_environment(env_id: int) -> Optional[dict]:
     row = _get_conn().execute("SELECT * FROM environments WHERE id=?", (env_id,)).fetchone()
     return dict(row) if row else None
 
