@@ -11,6 +11,7 @@ SQLite 数据库 —— 建表 + 连接管理 + CRUD
 import sqlite3
 import json
 import threading
+from typing import Optional
 from datetime import datetime
 from .config import DB_PATH, CACHE_DIR
 
@@ -178,7 +179,7 @@ def update_run(run_id: int, **kwargs) -> dict:
     return get_run(run_id)
 
 
-def get_run(run_id: int) -> dict | None:
+def get_run(run_id: int) -> Optional[dict]:
     """获取单条执行记录"""
     row = _get_conn().execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone()
     return dict(row) if row else None

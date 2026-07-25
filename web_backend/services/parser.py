@@ -16,7 +16,7 @@ from pathlib import Path
 from ..database import insert_result
 
 
-def parse_and_store(xml_path: str | Path, run_id: int) -> dict:
+def parse_and_store(xml_path, run_id: int) -> dict:
     """
     解析 JUnit XML 文件，将每条用例结果写入 run_results 表
 

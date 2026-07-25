@@ -19,6 +19,7 @@ import sys
 import asyncio
 import subprocess
 import concurrent.futures
+from typing import Optional
 from pathlib import Path
 from datetime import datetime
 from ..config import PROJECT_ROOT, REPORTS_DIR, PYTEST_TIMEOUT
@@ -193,7 +194,7 @@ async def _generate_allure(results_dir: Path, report_dir: Path):
         pass
 
 
-def get_full_run(run_id: int) -> dict | None:
+def get_full_run(run_id: int) -> Optional[dict]:
     """获取执行记录 + 关联的用例结果"""
     from ..database import get_run, get_results
     run = get_run(run_id)
