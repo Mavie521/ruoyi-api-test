@@ -18,7 +18,6 @@ import os
 import sys
 import asyncio
 import subprocess
-import concurrent.futures
 from typing import Optional
 from pathlib import Path
 from datetime import datetime
@@ -27,8 +26,7 @@ from ..database import create_run, update_run, is_running
 from .parser import parse_and_store
 
 
-# 线程池 + 全局锁
-_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+# 全局锁
 _run_lock = asyncio.Lock()
 
 
@@ -139,7 +137,7 @@ async def execute_pytest(
             else:
                 output_lines.append(f"[CONFIG] 使用默认 BASE_URL={sub_env.get('BASE_URL', '未设置')}")
             output = await loop.run_in_executor(
-                _executor,
+                None,
                 _run_pytest_sync,
                 cmd,
                 str(PROJECT_ROOT),
@@ -202,7 +200,7 @@ async def _generate_allure(results_dir: Path, report_dir: Path):
         loop = asyncio.get_event_loop()
         report_dir.mkdir(parents=True, exist_ok=True)
         await loop.run_in_executor(
-            _executor,
+            None,
             lambda: subprocess.run(
                 ["allure", "generate", str(results_dir), "-o", str(report_dir), "--clean"],
                 cwd=str(PROJECT_ROOT),
