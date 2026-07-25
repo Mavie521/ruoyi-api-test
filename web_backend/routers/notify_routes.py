@@ -7,6 +7,15 @@ from ..services.dingtalk import send_notification
 router = APIRouter()
 
 
+def _mask_secret(s: str) -> str:
+    """前端只展示掩码，防止浏览器端泄露"""
+    if not s:
+        return ""
+    if len(s) > 8:
+        return s[:3] + "****" + s[-4:]
+    return "****"
+
+
 class DingTalkConfigRequest(BaseModel):
     webhook_url: str = ""
     secret: str = ""
@@ -16,17 +25,18 @@ class DingTalkConfigRequest(BaseModel):
 
 @router.get("/config")
 async def get_config():
-    return {"code": 200, "message": "success", "data": get_dingtalk_config()}
+    config = get_dingtalk_config()
+    config["secret"] = _mask_secret(config["secret"])  # 掩码后返回前端
+    return {"code": 200, "message": "success", "data": config}
 
 
 @router.put("/config")
 async def update_config(req: DingTalkConfigRequest):
-    update_dingtalk_config(
-        webhook_url=req.webhook_url,
-        secret=req.secret,
-        enabled=req.enabled,
-        notify_on=req.notify_on,
-    )
+    updates = req.dict()
+    # 前端未修改 secret（仍是掩码或空）→ 不更新该字段
+    if "****" in updates.get("secret", ""):
+        del updates["secret"]
+    update_dingtalk_config(**updates)
     return {"code": 200, "message": "已更新", "data": None}
 
 
