@@ -70,9 +70,5 @@ async def serve_report_assets(tag: str, rest_path: str):
 
 @router.get("/{tag}")
 async def serve_report(tag: str):
-    """服务 Allure 报告首页"""
-    report_dir = REPORTS_DIR / f"allure-report-{tag}"
-    index_path = report_dir / "index.html"
-    if not index_path.exists():
-        return {"code": 404, "message": f"报告 {tag} 不存在", "data": None}
-    return FileResponse(str(index_path), media_type="text/html")
+    """服务 Allure 报告首页 — 重定向到 {tag}/index.html，保证相对路径正确"""
+    return RedirectResponse(url=f"/api/reports/{tag}/index.html")
