@@ -41,15 +41,15 @@ export default function ResultTable({ results = [] }) {
                       {r.message.split('\n')[0].slice(0, 80)}
                     </summary>
                     <pre className="text-xs text-gray-400 mt-1 whitespace-pre-wrap max-w-lg">{r.message}</pre>
-                    {r.ai_analysis && (
-                      <div className="mt-2 p-2 bg-purple-900/20 border border-purple-800/40 rounded text-xs">
-                        <span className="text-purple-400 font-medium">🤖 AI 分析: </span>
-                        <span className="text-gray-300">{r.ai_analysis}</span>
-                      </div>
-                    )}
                   </details>
                 ) : (
                   <span className="text-gray-500">—</span>
+                )}
+                {r.ai_analysis && (
+                  <div className="mt-1 p-2 bg-purple-900/20 border border-purple-800/40 rounded text-xs">
+                    <span className="text-purple-400 font-medium">🤖 AI: </span>
+                    <span className="text-gray-300">{r.ai_analysis}</span>
+                  </div>
                 )}
               </td>
             </tr>
