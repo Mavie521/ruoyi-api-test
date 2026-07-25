@@ -42,7 +42,7 @@ export default function NotifySettingsPage() {
   if (!config) return <div className="p-6" />
 
   return (
-    <div className="p-6 space-y-6 max-w-2xl">
+    <div className="p-6 space-y-6 max-w-2xl mx-auto">
       <h2 className="text-xl font-bold">钉钉通知配置</h2>
 
       <div className="bg-surface rounded-lg p-6 space-y-4">
