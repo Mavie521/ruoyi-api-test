@@ -140,6 +140,17 @@ async def rerun_failed(run_id: int):
     return {"code": 200, "message": f"已提交重跑 {len(failed_nodes)} 条失败用例", "data": {"count": len(failed_nodes)}}
 
 
+@router.post("/clear-stuck")
+async def clear_stuck():
+    """清除所有卡住的 running 任务"""
+    from ..database import _get_conn
+    c = _get_conn()
+    cur = c.execute("UPDATE runs SET status='error', output_log='手动清除: 任务卡住' WHERE status='running'")
+    c.commit()
+    count = cur.rowcount
+    return {"code": 200, "message": f"已清除 {count} 个卡住的任务", "data": {"count": count}}
+
+
 @router.delete("/{run_id}")
 async def remove_run(run_id: int):
     """删除执行记录"""

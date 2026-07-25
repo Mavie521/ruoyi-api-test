@@ -50,12 +50,18 @@ export default function RunHistoryPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">执行历史</h2>
-        <button
-          onClick={() => setShowTrigger(true)}
-          className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          ▶ 新建执行
-        </button>
+        <div className="flex gap-2">
+          <button onClick={async () => { await api.post('/api/runs/clear-stuck'); loadRuns(1) }}
+            className="bg-red-900/30 hover:bg-red-900/50 border border-red-700 text-red-300 px-3 py-2 rounded-lg text-xs transition-colors">
+            🧹 清除卡住任务
+          </button>
+          <button
+            onClick={() => setShowTrigger(true)}
+            className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            ▶ 新建执行
+          </button>
+        </div>
       </div>
 
       {runs === null ? (
