@@ -140,13 +140,12 @@ async def execute_pytest(
     # ── 7. 钉钉 ──
     try:
         from .dingtalk import send_notification
-        import os as _os
-        platform_url = _os.getenv("PLATFORM_URL", "http://localhost:8001").rstrip("/")
+        from ..config import PLATFORM_URL
         send_notification(
             run_tag=tag, status=status, total=summary["total"],
             passed=summary["passed"], failed=summary["failed"],
             duration=summary["duration"],
-            report_url=f"{platform_url}/api/reports/{tag}",
+            report_url=f"{PLATFORM_URL.rstrip('/')}/api/reports/{tag}",
         )
     except Exception:
         pass
