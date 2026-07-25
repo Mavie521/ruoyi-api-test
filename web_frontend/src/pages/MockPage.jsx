@@ -4,7 +4,16 @@ import api from '../api/client.js'
 export default function MockPage() {
   const [rules, setRules] = useState(null)
   const [logs, setLogs] = useState(null)
-  const [tab, setTab] = useState('rules')
+  const [tab, setTab] = useState(() => {
+    return new URLSearchParams(window.location.search).get('tab') || 'rules'
+  })
+
+  const switchTab = (t) => {
+    setTab(t)
+    const url = new URL(window.location)
+    url.searchParams.set('tab', t)
+    window.history.replaceState({}, '', url)
+  }
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ name: '', path: '', http_method: 'GET', status_code: 200, response_body: '{}', delay_ms: 0, description: '' })
 
@@ -19,10 +28,11 @@ export default function MockPage() {
 
   const handleSave = async () => {
     try { JSON.parse(form.response_body) } catch { alert('响应 JSON 格式错误，请修正'); return }
+    const payload = { ...form, status_code: parseInt(form.status_code) || 200, delay_ms: parseInt(form.delay_ms) || 0 }
     if (editing?.id) {
-      await api.put(`/api/mock/rules/${editing.id}`, form)
+      await api.put(`/api/mock/rules/${editing.id}`, payload)
     } else {
-      await api.post('/api/mock/rules', form)
+      await api.post('/api/mock/rules', payload)
     }
     setEditing(null)
     setForm({ name: '', path: '', http_method: 'GET', status_code: 200, response_body: '{}', delay_ms: 0, description: '' })
@@ -44,7 +54,7 @@ export default function MockPage() {
       {/* Tab 切换 */}
       <div className="flex gap-2 border-b border-gray-700 pb-2">
         {['rules','logs'].map(t => (
-          <button key={t} onClick={() => setTab(t)}
+          <button key={t} onClick={() => switchTab(t)}
             className={`px-4 py-2 rounded-t-lg text-sm font-medium transition-colors ${tab === t ? 'bg-surface text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200'}`}>
             {t === 'rules' ? '📋 Mock 规则' : '📜 调用日志'}
           </button>
@@ -163,12 +173,12 @@ export default function MockPage() {
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">状态码</label>
-                <input type="number" value={form.status_code} onChange={e => setForm({...form, status_code: parseInt(e.target.value) || 200})}
+                <input type="text" inputMode="numeric" value={form.status_code} onChange={e => setForm({...form, status_code: e.target.value})}
                   className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-primary" />
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">延迟 (ms)</label>
-                <input type="number" value={form.delay_ms} onChange={e => setForm({...form, delay_ms: parseInt(e.target.value) || 0})}
+                <input type="text" inputMode="numeric" value={form.delay_ms} onChange={e => setForm({...form, delay_ms: e.target.value})}
                   className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-primary" />
               </div>
             </div>
