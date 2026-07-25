@@ -15,7 +15,6 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from .config import CORS_ORIGINS, PROJECT_ROOT, REPORTS_DIR
 from .database import init_db, close_db
 from .routers import project_routes, run_routes, report_routes
@@ -82,26 +81,48 @@ async def env_options():
 
 # ── 静态文件挂载（注册在最后，防止抢占业务路由） ──
 
-# Allure 报告静态服务（通过 /allure/{tag}/... 访问）
-if REPORTS_DIR.exists():
-    app.mount("/allure", StaticFiles(directory=str(REPORTS_DIR)), name="allure_static")
+# 兜底路由：统一处理 allure 报告 + 前端 SPA 静态资源
+from fastapi.responses import FileResponse
 
-# 前端 SPA 静态文件
+MIME_MAP = {".js": "application/javascript", ".css": "text/css",
+            ".html": "text/html", ".json": "application/json",
+            ".svg": "image/svg+xml", ".png": "image/png",
+            ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2"}
+
 frontend_dir = PROJECT_ROOT / "web_frontend" / "dist"
-if frontend_dir.exists():
-    # JS/CSS 等静态资源
-    app.mount("/assets", StaticFiles(directory=str(frontend_dir / "assets")), name="frontend_assets")
 
-    # SPA 兜底：所有非 API/Allure 请求回退到 index.html
-    from fastapi.responses import FileResponse
-    index_path = frontend_dir / "index.html"
 
-    @app.get("/{full_path:path}")
-    async def spa_fallback(full_path: str):
-        """SPA fallback: 让 React Router 处理前端路由"""
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    """统一处理 allure 报告 + SPA 前端"""
+
+    # 1. Allure 报告路径: /allure/allure-report-{tag}/...
+    if full_path.startswith("allure/"):
+        file_path = REPORTS_DIR / full_path[len("allure/"):]
+        try:
+            file_path.resolve().relative_to(REPORTS_DIR.resolve())
+        except ValueError:
+            return {"code": 403}
+        if file_path.is_file():
+            return FileResponse(str(file_path), media_type=MIME_MAP.get(file_path.suffix))
+        return {"code": 404}
+
+    # 2. 前端静态资源 + SPA
+    if frontend_dir.exists():
+        file_path = frontend_dir / full_path
+        try:
+            file_path.resolve().relative_to(frontend_dir.resolve())
+        except ValueError:
+            return {"code": 403}
+
+        if file_path.is_file():
+            return FileResponse(str(file_path), media_type=MIME_MAP.get(file_path.suffix))
+
+        index_path = frontend_dir / "index.html"
         if index_path.exists():
             return FileResponse(str(index_path), media_type="text/html")
-        return {"code": 404, "message": "前端未构建，请运行 npm run build"}
+
+    return {"code": 404, "message": "Not Found"}
 
 
 # ── 直接运行入口 ──
