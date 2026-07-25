@@ -17,7 +17,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from .config import CORS_ORIGINS, PROJECT_ROOT, REPORTS_DIR
 from .database import init_db, close_db
-from .routers import project_routes, run_routes, report_routes, environment_routes, notify_routes
+from .routers import project_routes, run_routes, report_routes, environment_routes, notify_routes, mock_routes
 
 
 @asynccontextmanager
@@ -67,6 +67,7 @@ app.include_router(run_routes.router, prefix="/api/runs", tags=["执行管理"])
 app.include_router(report_routes.router, prefix="/api/reports", tags=["报告服务"])
 app.include_router(environment_routes.router, prefix="/api/environments", tags=["环境管理"])
 app.include_router(notify_routes.router, prefix="/api/notify/dingtalk", tags=["钉钉通知"])
+app.include_router(mock_routes.router, prefix="/api/mock", tags=["Mock平台"])
 
 
 # ── 系统接口 ──
@@ -100,6 +101,43 @@ async def env_options():
         from .config import ENV_OPTIONS
         return {"code": 200, "message": "success", "data": {"options": ENV_OPTIONS}}
     return {"code": 200, "message": "success", "data": {"environments": envs}}
+
+
+# ── Mock 统一入口 ── 接收外部 HTTP 请求，匹配规则返回预设响应
+from fastapi.responses import Response
+
+@app.api_route("/mock/{mock_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
+async def mock_entry(mock_path: str, request: Request):
+    """Mock 统一入口 —— 接收任意 HTTP 方法的请求，匹配规则"""
+    from .services.mock_engine import match_and_respond
+    import json
+
+    body_str = ""
+    try:
+        body_bytes = await request.body()
+        body_str = body_bytes.decode("utf-8", errors="replace") if body_bytes else ""
+    except Exception:
+        pass
+
+    headers_str = json.dumps(dict(request.headers), ensure_ascii=False)
+
+    status_code, response_body, matched = match_and_respond(
+        path=f"/{mock_path}",
+        method=request.method,
+        body=body_str,
+        headers=headers_str,
+    )
+
+    return Response(
+        content=response_body,
+        status_code=status_code,
+        media_type="application/json",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
 
 
 # ── 前端 SPA + Allure 静态资源：404 exception handler ──

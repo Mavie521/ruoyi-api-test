@@ -10,6 +10,7 @@ const navItems = [
 const toolItems = [
   { to: '/environments', label: '环境管理', icon: '🔧' },
   { to: '/settings/notify', label: '钉钉通知', icon: '🔔' },
+  { to: '/mock', label: 'Mock 平台', icon: '🎭' },
 ]
 
 export default function Layout({ children }) {

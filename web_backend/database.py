@@ -92,6 +92,37 @@ def init_db():
             created_at  TEXT DEFAULT (datetime('now','localtime'))
         );
 
+        -- Mock 规则表
+        CREATE TABLE IF NOT EXISTS mock_rules (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            name            TEXT NOT NULL,
+            path            TEXT NOT NULL,
+            http_method     TEXT NOT NULL DEFAULT 'GET',
+            status_code     INTEGER NOT NULL DEFAULT 200,
+            response_body   TEXT NOT NULL DEFAULT '{}',
+            delay_ms        INTEGER DEFAULT 0,
+            enabled         INTEGER DEFAULT 1,
+            description     TEXT DEFAULT '',
+            created_at      TEXT DEFAULT (datetime('now','localtime')),
+            updated_at      TEXT DEFAULT (datetime('now','localtime'))
+        );
+
+        -- Mock 调用日志表
+        CREATE TABLE IF NOT EXISTS mock_logs (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            rule_id         INTEGER REFERENCES mock_rules(id) ON DELETE SET NULL,
+            rule_name       TEXT DEFAULT '',
+            path            TEXT NOT NULL,
+            http_method     TEXT NOT NULL,
+            request_body    TEXT DEFAULT '',
+            request_headers TEXT DEFAULT '',
+            status_code     INTEGER NOT NULL,
+            response_body   TEXT DEFAULT '',
+            matched         INTEGER DEFAULT 1,
+            created_at      TEXT DEFAULT (datetime('now','localtime'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_mock_logs_created ON mock_logs(created_at);
+
         -- 钉钉通知配置表
         CREATE TABLE IF NOT EXISTS dingtalk_config (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -381,3 +412,92 @@ def update_dingtalk_config(**kwargs) -> bool:
     _get_conn().execute(f"UPDATE dingtalk_config SET {sets} WHERE id=?", vals)
     _get_conn().commit()
     return True
+
+
+# ============================================================
+# Mock 规则 CRUD
+# ============================================================
+
+def list_mock_rules() -> list[dict]:
+    rows = _get_conn().execute("SELECT * FROM mock_rules ORDER BY id").fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_mock_rule(rule_id: int) -> Optional[dict]:
+    row = _get_conn().execute("SELECT * FROM mock_rules WHERE id=?", (rule_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def create_mock_rule(name: str, path: str, http_method: str = "GET",
+                     status_code: int = 200, response_body: str = "{}",
+                     delay_ms: int = 0, description: str = "") -> int:
+    conn = _get_conn()
+    cur = conn.execute(
+        """INSERT INTO mock_rules (name, path, http_method, status_code, response_body, delay_ms, description)
+           VALUES (?,?,?,?,?,?,?)""",
+        (name, path, http_method, status_code, response_body, delay_ms, description),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def update_mock_rule(rule_id: int, **kwargs) -> bool:
+    allowed = {"name", "path", "http_method", "status_code", "response_body", "delay_ms", "description"}
+    updates = {k: v for k, v in kwargs.items() if k in allowed}
+    if not updates:
+        return False
+    updates["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sets = ", ".join(f"{k}=?" for k in updates)
+    vals = list(updates.values()) + [rule_id]
+    _get_conn().execute(f"UPDATE mock_rules SET {sets} WHERE id=?", vals)
+    _get_conn().commit()
+    return True
+
+
+def delete_mock_rule(rule_id: int):
+    _get_conn().execute("DELETE FROM mock_rules WHERE id=?", (rule_id,))
+    _get_conn().commit()
+
+
+def toggle_mock_rule(rule_id: int) -> dict:
+    rule = get_mock_rule(rule_id)
+    if not rule:
+        return None
+    new_enabled = 0 if rule["enabled"] else 1
+    _get_conn().execute("UPDATE mock_rules SET enabled=? WHERE id=?", (new_enabled, rule_id))
+    _get_conn().commit()
+    return get_mock_rule(rule_id)
+
+
+# ============================================================
+# Mock 日志
+# ============================================================
+
+def insert_mock_log(rule_id, rule_name, path, http_method, request_body,
+                     request_headers, status_code, response_body, matched) -> int:
+    conn = _get_conn()
+    cur = conn.execute(
+        """INSERT INTO mock_logs (rule_id, rule_name, path, http_method, request_body,
+           request_headers, status_code, response_body, matched)
+           VALUES (?,?,?,?,?,?,?,?,?)""",
+        (rule_id, rule_name, path, http_method, request_body or "",
+         request_headers or "", status_code, response_body or "", matched),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def list_mock_logs(page: int = 1, page_size: int = 50) -> dict:
+    conn = _get_conn()
+    offset = (page - 1) * page_size
+    rows = conn.execute(
+        "SELECT * FROM mock_logs ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (page_size, offset),
+    ).fetchall()
+    total = conn.execute("SELECT COUNT(*) FROM mock_logs").fetchone()[0]
+    return {"items": [dict(r) for r in rows], "total": total}
+
+
+def clear_mock_logs():
+    _get_conn().execute("DELETE FROM mock_logs")
+    _get_conn().commit()

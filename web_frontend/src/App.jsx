@@ -7,6 +7,7 @@ import RunDetailPage from './pages/RunDetailPage.jsx'
 import ReportPage from './pages/ReportPage.jsx'
 import EnvironmentPage from './pages/EnvironmentPage.jsx'
 import NotifySettingsPage from './pages/NotifySettingsPage.jsx'
+import MockPage from './pages/MockPage.jsx'
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/reports" element={<ReportPage />} />
         <Route path="/environments" element={<EnvironmentPage />} />
         <Route path="/settings/notify" element={<NotifySettingsPage />} />
+        <Route path="/mock" element={<MockPage />} />
       </Routes>
     </Layout>
   )
