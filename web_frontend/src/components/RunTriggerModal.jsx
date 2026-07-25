@@ -75,9 +75,12 @@ export default function RunTriggerModal({ isOpen, onClose, onSuccess }) {
               type="text"
               value={form.markers}
               onChange={(e) => handleChange('markers', e.target.value)}
-              placeholder="如: p0 / p0 and not slow / security"
+              placeholder="如: p0 / p1 / security / p0 and not slow"
               className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary placeholder-gray-600"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              可选: smoke / critical / regression / slow / p0 / p1 / p2 / security。留空跑全部
+            </p>
           </div>
 
           {/* 测试路径 */}
