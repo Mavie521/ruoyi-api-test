@@ -8,12 +8,26 @@
 
 报告存储路径: reports/allure-report-{run_tag}/
 """
+import mimetypes
 from pathlib import Path
 from fastapi import APIRouter
 from fastapi.responses import FileResponse, RedirectResponse
 from ..config import REPORTS_DIR
 
 router = APIRouter()
+
+# MIME 映射（FileResponse 对某些类型猜不准确）
+MIME_MAP = {
+    ".js":   "application/javascript",
+    ".css":  "text/css",
+    ".html": "text/html",
+    ".json": "application/json",
+    ".svg":  "image/svg+xml",
+    ".png":  "image/png",
+    ".ico":  "image/x-icon",
+    ".woff": "font/woff",
+    ".woff2":"font/woff2",
+}
 
 
 @router.get("/list")
@@ -49,7 +63,9 @@ async def serve_report_assets(tag: str, rest_path: str):
         return {"code": 403, "message": "禁止访问", "data": None}
     if not file_path.exists():
         return {"code": 404, "message": "文件不存在", "data": None}
-    return FileResponse(str(file_path))
+    suffix = file_path.suffix
+    media_type = MIME_MAP.get(suffix)
+    return FileResponse(str(file_path), media_type=media_type)
 
 
 @router.get("/{tag}")
@@ -59,4 +75,4 @@ async def serve_report(tag: str):
     index_path = report_dir / "index.html"
     if not index_path.exists():
         return {"code": 404, "message": f"报告 {tag} 不存在", "data": None}
-    return FileResponse(str(index_path))
+    return FileResponse(str(index_path), media_type="text/html")
