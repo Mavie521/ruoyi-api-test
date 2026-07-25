@@ -33,7 +33,7 @@ export default function RunHistoryPage() {
 
   // 如果列表中有 running 的任务，开启轮询
   useEffect(() => {
-    const hasRunning = runs.some((r) => r.status === 'running' || r.status === 'pending')
+    const hasRunning = runs && runs.some((r) => r.status === 'running' || r.status === 'pending')
     if (hasRunning) {
       const interval = setInterval(() => loadRuns(), 2000)
       setPolling(interval)
