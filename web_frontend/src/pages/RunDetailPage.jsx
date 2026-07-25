@@ -119,16 +119,28 @@ export default function RunDetailPage() {
         )}
         {/* 重跑失败用例 */}
         {run.failed_tests > 0 && run.status !== 'running' && (
-          <button
-            onClick={async () => {
-              const res = await api.post(`/api/runs/${id}/rerun-failed`)
-              if (res.code === 200) { alert(res.message); window.location.reload() }
-              else alert(res.message || '重跑失败')
-            }}
-            className="bg-amber-700/30 hover:bg-amber-700/50 border border-amber-600 text-amber-300 px-4 py-2 rounded-lg text-sm transition-colors"
-          >
-            🔄 重跑失败用例 ({run.failed_tests})
-          </button>
+          <>
+            <button
+              onClick={async () => {
+                const res = await api.post(`/api/runs/${id}/rerun-failed`)
+                if (res.code === 200) { alert(res.message); window.location.reload() }
+                else alert(res.message || '重跑失败')
+              }}
+              className="bg-amber-700/30 hover:bg-amber-700/50 border border-amber-600 text-amber-300 px-4 py-2 rounded-lg text-sm transition-colors"
+            >
+              🔄 重跑失败用例 ({run.failed_tests})
+            </button>
+            <button
+              onClick={async () => {
+                const res = await api.post(`/api/runs/${id}/ai-analyze`)
+                alert(res.message || '分析完成')
+                loadDetail()
+              }}
+              className="bg-purple-900/30 hover:bg-purple-900/50 border border-purple-700 text-purple-300 px-4 py-2 rounded-lg text-sm transition-colors"
+            >
+              🤖 AI 分析失败原因
+            </button>
+          </>
         )}
       </div>
 

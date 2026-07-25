@@ -50,6 +50,12 @@ PYTEST_TIMEOUT = 600               # 单个测试任务超时（秒）
 # 平台访问地址（钉钉消息里的报告链接用，改成你的实际 IP）
 PLATFORM_URL = "http://192.168.149.100:8001"
 
+# AI 失败分析配置（OpenAI 兼容接口）
+AI_ENABLED = False                         # 是否启用 AI 分析
+AI_API_URL = "https://api.openai.com/v1/chat/completions"  # 兼容 Claude API 等
+AI_API_KEY = ""                            # API Key
+AI_MODEL = "gpt-3.5-turbo"                 # 模型名
+
 ENV_OPTIONS = ["dev", "staging", "prod", "docker"]  # 环境下拉选项
 
 # ============================================================

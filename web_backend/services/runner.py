@@ -137,7 +137,17 @@ async def execute_pytest(
     except Exception:
         pass
 
-    # ── 7. 钉钉 ──
+    # ── 7. AI 分析失败用例（后台异步，不阻塞） ──
+    try:
+        from .ai_analyzer import analyze_failures_batch
+        from ..database import get_results
+        failed = get_results(run_id, outcome="failed")
+        if failed:
+            asyncio.create_task(asyncio.to_thread(analyze_failures_batch, failed))
+    except Exception:
+        pass
+
+    # ── 8. 钉钉 ──
     try:
         from .dingtalk import send_notification
         from ..config import PLATFORM_URL

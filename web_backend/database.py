@@ -78,7 +78,8 @@ def init_db():
             nodeid       TEXT DEFAULT '',
             outcome      TEXT DEFAULT 'unknown',
             duration_sec REAL DEFAULT 0,
-            message      TEXT DEFAULT ''
+            message      TEXT DEFAULT '',
+            ai_analysis  TEXT DEFAULT ''
         );
         CREATE INDEX IF NOT EXISTS idx_results_run ON run_results(run_id);
 
@@ -269,15 +270,20 @@ def is_running() -> bool:
 
 def insert_result(run_id: int, test_name: str, outcome: str,
                   nodeid: str = "", duration_sec: float = 0,
-                  message: str = ""):
+                  message: str = "", ai_analysis: str = ""):
     """插入单条用例结果"""
     conn = _get_conn()
     conn.execute(
-        """INSERT INTO run_results (run_id, test_name, nodeid, outcome, duration_sec, message)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (run_id, test_name, nodeid, outcome, duration_sec, message),
+        """INSERT INTO run_results (run_id, test_name, nodeid, outcome, duration_sec, message, ai_analysis)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (run_id, test_name, nodeid, outcome, duration_sec, message, ai_analysis),
     )
     conn.commit()
+
+
+def update_result_analysis(result_id: int, ai_analysis: str):
+    _get_conn().execute("UPDATE run_results SET ai_analysis=? WHERE id=?", (ai_analysis, result_id))
+    _get_conn().commit()
 
 
 def get_results(run_id: int, outcome: str = None) -> list[dict]:

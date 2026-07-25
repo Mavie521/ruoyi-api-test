@@ -165,6 +165,22 @@ async def clear_stuck():
     return {"code": 200, "message": f"已清除 {count} 个卡住的任务", "data": {"count": count}}
 
 
+@router.post("/{run_id}/ai-analyze")
+async def ai_analyze(run_id: int):
+    """手动触发 AI 分析失败用例"""
+    run = get_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="执行记录不存在")
+    from ..database import get_results
+    from ..services.ai_analyzer import analyze_failures_batch
+    failed = get_results(run_id, outcome="failed")
+    if not failed:
+        raise HTTPException(status_code=400, detail="没有失败的用例可分析")
+    # 同步执行（手动触发）
+    analyze_failures_batch(failed)
+    return {"code": 200, "message": f"已分析 {len(failed)} 条失败用例", "data": {"count": len(failed)}}
+
+
 @router.delete("/{run_id}")
 async def remove_run(run_id: int):
     """删除执行记录"""
