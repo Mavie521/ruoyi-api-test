@@ -407,7 +407,8 @@ def get_dingtalk_config() -> dict:
         _get_conn().commit()
         row = _get_conn().execute("SELECT * FROM dingtalk_config WHERE id=1").fetchone()
     config = dict(row)
-    config["secret"] = decrypt(config.get("secret", ""))
+    for field in ("secret", "webhook_url"):
+        config[field] = decrypt(config.get(field, ""))
     return config
 
 
@@ -415,8 +416,9 @@ def update_dingtalk_config(**kwargs) -> bool:
     from utils.crypto_utils import encrypt
     allowed = {"webhook_url", "secret", "enabled", "notify_on"}
     updates = {k: v for k, v in kwargs.items() if k in allowed}
-    if "secret" in updates and updates["secret"]:
-        updates["secret"] = encrypt(updates["secret"])
+    for field in ("secret", "webhook_url"):
+        if field in updates and updates[field]:
+            updates[field] = encrypt(updates[field])
     if not updates:
         return False
     sets = ", ".join(f"{k}=?" for k in updates)
