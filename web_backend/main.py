@@ -82,7 +82,7 @@ async def env_options():
     if not envs:
         from .config import ENV_OPTIONS
         return {"code": 200, "message": "success", "data": {"options": ENV_OPTIONS}}
-    return {"code": 200, "message": "success", "data": {"environments": envs}}}
+    return {"code": 200, "message": "success", "data": {"environments": envs}}
 
 
 # ── 前端 SPA + Allure 静态资源：404 exception handler ──
