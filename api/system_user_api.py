@@ -1,95 +1,32 @@
-"""
-真实用户管理模块 API 封装
-对应若依后台: 系统管理 → 用户管理
-真实接口: /system/user/**
-操作数据库: sys_user 表
-"""
-import time
+"""用户管理模块 API"""
+import uuid
 from typing import Optional
-import allure
 from .base_api import BaseApi
 
 
 class SystemUserApi(BaseApi):
-    """用户管理（真实业务）"""
+    resource = "/system/user"
 
-    @allure.step("查询用户列表")
-    def list_users(self, params: dict = None) -> dict:
-        """
-        查询用户列表（分页）
-        GET /system/user/list
-        返回: {code, msg, total, rows: [...]}
-        """
-        res = self.get("/system/user/list", params=params or {})
-        return res.json()
+    # ── 用户特有的方法 ──
 
-    @allure.step("获取用户详情")
-    def get_user(self, user_id: int) -> dict:
-        """
-        获取用户详情
-        GET /system/user/{userId}
-        """
-        res = self.get(f"/system/user/{user_id}")
-        return res.json()
-
-    @allure.step("新增用户")
-    def create_user(self, user_data: dict) -> dict:
-        """
-        新增用户
-        POST /system/user
-        """
-        res = self.post("/system/user", json=user_data)
-        return res.json()
-
-    @allure.step("修改用户")
-    def update_user(self, user_data: dict) -> dict:
-        """
-        修改用户
-        PUT /system/user
-        """
-        res = self.put("/system/user", json=user_data)
-        return res.json()
-
-    @allure.step("删除用户")
-    def delete_user(self, user_id: int) -> dict:
-        """
-        删除用户
-        DELETE /system/user/{userId}
-        """
-        res = self.delete(f"/system/user/{user_id}")
-        return res.json()
-
-    @allure.step("重置密码")
     def reset_password(self, user_id: int, password: str = "123456") -> dict:
-        """
-        重置密码
-        PUT /system/user/resetPwd
-        """
-        res = self.put("/system/user/resetPwd", json={"userId": user_id, "password": password})
-        return res.json()
+        return self._call(method="PUT", path=f"{self.resource}/resetPwd",
+                          json={"userId": user_id, "password": password})
 
-    @allure.step("修改用户状态")
-    def change_status(self, user_id: int, status: str = "1") -> dict:
-        """
-        修改用户状态（启用/禁用）
-        PUT /system/user/changeStatus
-        """
-        res = self.put("/system/user/changeStatus", json={"userId": user_id, "status": status})
-        return res.json()
+    def auth_role(self, user_id: int) -> dict:
+        """查询用户已分配的角色列表"""
+        return self._call(method="GET", path=f"{self.resource}/authRole/{user_id}")
 
-    # ---------------------------------------------------------
-    # 业务辅助
-    # ---------------------------------------------------------
+    def profile(self) -> dict:
+        """获取当前登录用户个人信息"""
+        return self._call(method="GET", path=f"{self.resource}/profile")
+
     @staticmethod
-    def build_user_data(
-        username: str,
-        password: str = "123456",
-        user_id: Optional[int] = None,
-        **extra,
-    ) -> dict:
-        """构造用户数据，默认生成带时间戳的用户信息"""
-        suffix = str(int(time.time() * 1000))[-6:]
-        data = {
+    def build_user_data(username: str, password: str = "123456",
+                        user_id: Optional[int] = None, **extra) -> dict:  #类型提示 (Type Hinting) + 默认参数None
+        """构造用户数据，默认生成带随机后缀的用户信息"""
+        suffix = uuid.uuid4().hex[:8]
+        return {
             "userName": username,
             "nickName": extra.get("nick_name") or f"用户_{suffix}",
             "password": password,
@@ -101,7 +38,15 @@ class SystemUserApi(BaseApi):
             "postIds": [],
             "roleIds": [],
             "remark": "由接口测试框架创建",
+            **({"userId": user_id} if user_id is not None else {}),
         }
-        if user_id is not None:
-            data["userId"] = user_id
-        return data
+
+
+# 这段代码是典型的“工厂模式（Factory Pattern）”在测试数据构造中的应用。
+# 你可以把这个 build_user_data 函数理解为一个“智能数据组装车间”。
+# 1. 核心机制：它是怎么做到“既灵活又省事”的？
+# 这个函数最巧妙的地方在于 **extra 和 extra.get() 的配合。
+# **extra (魔法口袋)： 这是一个关键字参数。意思是，除了 username、password 这些明确定义的参数外，你传进来的任何其他参数（比如 nick_name、email），都会被打包成一个字典塞进 extra 里。这让函数变得极其灵活。
+# extra.get("key", default) (智能兜底)： 这是 Python 字典的一个方法。它的意思是：“去 extra 口袋里找 key，如果找到了就用它，如果没找到，就用 default 默认值。”
+# 最终 user_data 是一个包含 11 个字段的完整字典。build_user_data 帮你填了
+# deptId=103、sex="0"、status="0"、postIds=[]、roleIds=[] 这些不需要你关心的字段。

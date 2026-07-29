@@ -143,3 +143,14 @@ class TestSystemUser:
 
         resp = system_user_api.reset_password(user_id, "654321")
         assert_jsonpath_exact(resp, "$.code", 200)
+
+    @allure.story("用户查询")
+    @allure.title("获取当前用户个人信息")
+    @allure.severity(allure.severity_level.NORMAL)
+    @pytest.mark.p1
+    def test_get_profile(self, system_user_api):
+        """验证 profile() 返回当前登录用户信息"""
+        resp = system_user_api.profile()
+        assert_jsonpath_exact(resp, "$.code", 200)
+        user_data = resp.get("data", {})
+        assert user_data.get("userName"), "应返回当前用户名"

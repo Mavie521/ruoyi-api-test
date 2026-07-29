@@ -32,6 +32,11 @@ class RoleApi(BaseApi):
                           path=f"{self.resource}/authUser/unallocatedList",
                           params=params or {})
 
+    def role_menu_treeselect(self, role_id: int) -> dict:
+        """角色授权时加载菜单树"""
+        return self._call(method="GET",
+                          path=f"/system/menu/roleMenuTreeselect/{role_id}")
+
     @staticmethod
     def build_role_data(role_name: str, role_key: str,
                         role_id: Optional[int] = None, **extra) -> dict:

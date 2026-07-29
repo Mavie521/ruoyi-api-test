@@ -7,6 +7,7 @@ API 测试专用 fixtures —— Token 管理 + 数据库 + 环境注入
         user = db.query_one("SELECT * FROM sys_user WHERE user_name=%s", ("admin",))
 """
 import time
+import uuid
 import os
 import threading
 import mysql.connector
@@ -14,7 +15,7 @@ import pytest
 from config.config import ADMIN_USERNAME, ADMIN_PASSWORD
 from utils.logger import logger
 from utils.db_utils import DbClient
-from api import LoginApi, RoleApi, SystemUserApi
+from api import LoginApi, RoleApi, SystemUserApi, DeptApi, PostApi
 
 
 @pytest.fixture(scope="session")
@@ -49,6 +50,22 @@ def role_api(admin_login) -> RoleApi:
 def system_user_api(admin_login) -> SystemUserApi:
     """已登录的 SystemUserApi（真实用户管理）"""
     api = SystemUserApi()
+    api.set_token(admin_login.token)
+    return api
+
+
+@pytest.fixture(scope="session")
+def dept_api(admin_login) -> DeptApi:
+    """已登录的 DeptApi（部门管理）"""
+    api = DeptApi()
+    api.set_token(admin_login.token)
+    return api
+
+
+@pytest.fixture(scope="session")
+def post_api(admin_login) -> PostApi:
+    """已登录的 PostApi（岗位管理）"""
+    api = PostApi()
     api.set_token(admin_login.token)
     return api
 
@@ -118,16 +135,28 @@ def db_transaction() -> DbClient:
 
 
 @pytest.fixture
-def new_real_user_data() -> dict:
-    """生成真实用户数据（/system/user 需要 userName 等）"""
-    suffix = str(int(time.time() * 1000))[-6:]
-    return SystemUserApi.build_user_data(
-        username=f"test_real_{suffix}",
+def new_real_user_data(request, db) -> dict:
+    """生成真实用户数据，用例结束后自动清理（/system/user 需要 userName 等）"""
+    suffix = uuid.uuid4().hex[:8]
+    username = f"test_real_{suffix}"
+    data = SystemUserApi.build_user_data(
+        username=username,
         nick_name=f"测试用户_{suffix}",
         email=f"real_{suffix}@ruoyi.com",
         phone=f"138{suffix[:8].zfill(8)}",
         remark="接口测试-真实用户",
     )
+
+    yield data
+
+    def cleanup():
+        try:
+            db.execute("DELETE FROM sys_user WHERE user_name=%s", (username,))
+            logger.info(f"  清理测试用户: {username}")
+        except mysql.connector.Error as e:
+            logger.warning(f"  清理用户失败（可能已被删除）: {e}")
+
+    request.addfinalizer(cleanup)
 
 
 @pytest.fixture
@@ -136,7 +165,7 @@ def new_role_data(request, db) -> dict:
     生成新角色数据
     自动清理：用例结束后删除创建的角色（防止测试数据污染）
     """
-    suffix = str(int(time.time() * 1000))[-6:]
+    suffix = uuid.uuid4().hex[:8]
     role_key = f"test_role_{suffix}"
     data = RoleApi.build_role_data(
         role_name=f"测试角色_{suffix}",
