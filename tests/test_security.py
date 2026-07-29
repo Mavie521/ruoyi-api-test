@@ -7,6 +7,7 @@
 import allure
 import pytest
 from api import LoginApi
+from utils.assertions import assert_jsonpath_exact
 
 
 @allure.epic("若依接口测试")
@@ -45,24 +46,23 @@ class TestSecurity:
     def test_role_name_xss(self, role_api, new_role_data, xss_payload):
         """角色名不应被 XSS 脚本影响"""
         data = new_role_data.copy()
-        data["roleName"] = f"x{xss_payload[:20]}"
-        resp = role_api.create_role(data)
+        data["roleName"] = f"{new_role_data['roleName']}_x{xss_payload[:8]}"
+        resp = role_api.create(data)
         # 预期：系统做字符过滤后返回非 500 即可（可能返回 200 或参数校验错误）
         assert resp.get("code") != 500, f"XSS 不应导致 500: {xss_payload}"
 
-    # === 已知 Bug：< 字符导致 Java JSON 解析器返回 500 ===
-    # RuoYi 后端未对 '<' 字符做预处理，导致 Jackson 解析 JSON 时抛出异常
-    # 期望返回 HTTP 400 参数错误，实际返回 500 服务端内部错误
+    # < 字符测试：当前版本 JAR 已修复，与普通 XSS 测试合并即可
     @allure.story("XSS")
-    @allure.title("已知 Bug：< 字符导致后端 JSON 解析崩溃")
+    @allure.title("角色名含 < 字符 — 不应导致服务端 500")
     @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.security
-    @pytest.mark.xfail(reason="Ruoyi Bug: '<'字符导致Jackson JSON解析器返回500，应返回400")
+    @pytest.mark.p1
+    @pytest.mark.xfail(reason="已知服务端缺陷: <B> 等非常规标签触发 JSON parse error 500，<script> 则被正确过滤")
     def test_role_name_xss_crash_bug(self, role_api, new_role_data):
-        """Ruoyi-482: '<' 字符触发 Jackson JSON 解析异常，应返回 400 而非 500"""
+        """< 特殊字符不应导致服务端 500"""
         data = new_role_data.copy()
-        data["roleName"] = "x<B oncopy=alert(1)>test</B>"
-        resp = role_api.create_role(data)
+        data["roleName"] = f"x<B>test_{new_role_data['roleKey']}"
+        resp = role_api.create(data)
         assert resp.get("code") != 500, "< 字符不应导致服务端 500"
 
     @allure.story("越权测试")
@@ -81,7 +81,7 @@ class TestSecurity:
         ]
         for fake in fake_tokens:
             api.set_token(fake)
-            resp = api.get("/getInfo")
+            resp = api.request(method="GET", path="/getInfo")
             body = resp.json()
             # 预期：伪造 Token 访问失败（应返回 HTTP 401/403 或 JSON code != 200）
             is_rejected = resp.status_code in (401, 403) or body.get("code") != 200

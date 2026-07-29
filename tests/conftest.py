@@ -61,7 +61,7 @@ def db():
     """
     数据库客户端 fixture
     测试函数中直接使用: def test_xxx(db):
-    db.assert_value("SELECT status FROM sys_role WHERE role_id=%s", expected="0", params=(1,))
+    assert_db_value(db, "SELECT status FROM sys_role WHERE role_id=%s", expected="0", params=(1,))
     """
     client = DbClient()
     yield client
@@ -121,19 +121,13 @@ def db_transaction() -> DbClient:
 def new_real_user_data() -> dict:
     """生成真实用户数据（/system/user 需要 userName 等）"""
     suffix = str(int(time.time() * 1000))[-6:]
-    return {
-        "userName": f"test_real_{suffix}",
-        "nickName": f"测试用户_{suffix}",
-        "password": "123456",
-        "deptId": 103,
-        "email": f"real_{suffix}@ruoyi.com",
-        "phonenumber": f"138{suffix[:8].zfill(8)}",
-        "sex": "0",
-        "status": "0",
-        "postIds": [],
-        "roleIds": [],
-        "remark": "接口测试-真实用户",
-    }
+    return SystemUserApi.build_user_data(
+        username=f"test_real_{suffix}",
+        nick_name=f"测试用户_{suffix}",
+        email=f"real_{suffix}@ruoyi.com",
+        phone=f"138{suffix[:8].zfill(8)}",
+        remark="接口测试-真实用户",
+    )
 
 
 @pytest.fixture
@@ -144,13 +138,12 @@ def new_role_data(request, db) -> dict:
     """
     suffix = str(int(time.time() * 1000))[-6:]
     role_key = f"test_role_{suffix}"
-    data = {
-        "roleName": f"测试角色_{suffix}",
-        "roleKey": role_key,
-        "roleSort": 1,
-        "status": "0",
-        "menuIds": [],
-    }
+    data = RoleApi.build_role_data(
+        role_name=f"测试角色_{suffix}",
+        role_key=role_key,
+        role_sort=1,
+        menu_ids=[],
+    )
 
     # yield 之前的代码在测试前执行
     yield data
