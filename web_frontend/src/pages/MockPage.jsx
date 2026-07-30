@@ -151,7 +151,10 @@ export default function MockPage() {
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setEditing(null)}>
           <div className="bg-surface rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 space-y-4 max-h-[85vh] overflow-auto" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold">{editing.id ? '编辑规则' : '新增规则'}</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">{editing.id ? '编辑规则' : '新增规则'}</h3>
+              <button onClick={() => setEditing(null)} className="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-400 mb-1">名称</label>
