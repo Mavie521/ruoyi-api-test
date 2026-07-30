@@ -72,7 +72,19 @@ services:
     networks:
       - ry-network
 
-  # ruoyi-web commented out
+  ruoyi-web:
+    image: nginx:alpine
+    container_name: ry-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/html:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - ruoyi-api
+    networks:
+      - ry-network
 
   test-runner:
     build:

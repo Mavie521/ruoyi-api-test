@@ -9,10 +9,6 @@ WORKDIR /app
 # 从构建上下文复制本地 JAR（不走网络下载）
 COPY jar/ruoyi-admin.jar app.jar
 
-# 安装 curl（健康检查用）
-RUN apt-get update && apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/*
-
 ENV TZ=Asia/Shanghai
 EXPOSE 8080
 
