@@ -147,7 +147,15 @@ def non_admin_role(role_api, db):
         menu_ids=menu_ids,
     )
     resp = role_api.create(data)
-    assert resp.get("code") == 200, f"创建 test_common 角色失败: {resp}"
+
+    # xdist 并发保护：另一个 worker 可能先创建成功（role_key 唯一约束）
+    if resp.get("code") != 200:
+        row = db.query_one(
+            "SELECT role_id FROM sys_role WHERE role_key='test_common' AND del_flag='0'")
+        if row:
+            logger.info(f" test_common 已被其他 worker 创建: role_id={row['role_id']}")
+            return row["role_id"]
+        raise AssertionError(f"创建 test_common 角色失败且未查到: {resp}")
 
     new_row = db.query_one("SELECT role_id FROM sys_role WHERE role_key='test_common'")
     assert new_row, "test_common 角色创建后未查到"
