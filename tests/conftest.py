@@ -100,11 +100,8 @@ def db():
 # ====================================================
 
 @pytest.fixture(scope="session")
-def non_admin_role(admin_login, db):
-    """
-    幂等创建通用测试角色（session 级别，仅执行一次）
-    role_key='test_common' 精确查询，不存在则用管理员接口创建
-    """
+def non_admin_role(role_api, db):
+    """幂等创建通用测试角色（session 级别，仅执行一次）"""
     row = db.query_one(
         "SELECT role_id FROM sys_role WHERE role_key='test_common' AND del_flag='0'"
     )
@@ -112,8 +109,6 @@ def non_admin_role(admin_login, db):
         logger.info(f" 测试角色 test_common 已存在: role_id={row[0]}")
         return row[0]
 
-    role_api = RoleApi()
-    role_api.set_token(admin_login.token)
     data = RoleApi.build_role_data(
         role_name="通用测试角色",
         role_key="test_common",
@@ -123,36 +118,25 @@ def non_admin_role(admin_login, db):
     resp = role_api.create(data)
     assert resp.get("code") == 200, f"创建 test_common 角色失败: {resp}"
 
-    # 回查 role_id
-    new_row = db.query_one(
-        "SELECT role_id FROM sys_role WHERE role_key='test_common'"
-    )
+    new_row = db.query_one("SELECT role_id FROM sys_role WHERE role_key='test_common'")
     assert new_row, "test_common 角色创建后未查到"
     logger.info(f" 已创建测试角色 test_common: role_id={new_row[0]}")
     return new_row[0]
 
 
 @pytest.fixture(scope="session")
-def non_admin_login(request, admin_login, non_admin_role):
-    """
-    普通用户登录 fixture
-    - 依赖 non_admin_role（幂等创建 test_common 角色）
-    - 创建测试用户并分配 test_common 角色
-    - 返回已登录的 LoginApi（普通 token）
-    """
+def non_admin_login(request, admin_login, non_admin_role, system_user_api):
+    """普通用户登录 fixture，返回带普通 token 的 LoginApi"""
     suffix = uuid.uuid4().hex[:8]
     username = f"perm_test_{suffix}"
     password = "test123456"
 
-    user_api = SystemUserApi()
-    user_api.set_token(admin_login.token)
     data = SystemUserApi.build_user_data(
-        username=username,
-        password=password,
+        username=username, password=password,
         nick_name=f"权限测试_{suffix}",
         role_ids=[non_admin_role],
     )
-    resp = user_api.create(data)
+    resp = system_user_api.create(data)
     assert resp.get("code") == 200, f"创建权限测试用户失败: {resp}"
     logger.info(f" 创建权限测试用户: {username}")
 
@@ -165,26 +149,21 @@ def non_admin_login(request, admin_login, non_admin_role):
 
     def cleanup():
         _cleanup_test_user(admin_login.token, username)
-
     request.addfinalizer(cleanup)
 
 
 @pytest.fixture
-def non_admin_target_user(request, admin_login, non_admin_role):
-    """
-    为越权删除测试准备的第二个测试用户（普通角色，function 级别）
-    """
+def non_admin_target_user(request, admin_login, non_admin_role, system_user_api):
+    """为越权删除测试准备的第二个测试用户（function 级别）"""
     suffix = uuid.uuid4().hex[:8]
     username = f"perm_target_{suffix}"
 
-    user_api = SystemUserApi()
-    user_api.set_token(admin_login.token)
     data = SystemUserApi.build_user_data(
         username=username,
         nick_name=f"删除目标_{suffix}",
         role_ids=[non_admin_role],
     )
-    resp = user_api.create(data)
+    resp = system_user_api.create(data)
     assert resp.get("code") == 200, f"创建删除目标用户失败: {resp}"
 
     yield username
