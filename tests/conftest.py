@@ -127,7 +127,6 @@ def non_admin_role(role_api, db):
             role_api.delete([row["role_id"]])
         else:
             logger.info(f" 测试角色 test_common 已存在: role_id={row['role_id']}")
-            # 幂等设置 data_scope（覆盖上轮遗留或未设的情况）
             role_api.data_scope({
                 "roleId": row["role_id"], "dataScope": "5", "deptIds": [],
             })
@@ -152,16 +151,10 @@ def non_admin_role(role_api, db):
     )
     resp = role_api.create(data)
 
-    # xdist 并发保护：另一个 worker 可能先创建成功（role_key 唯一约束）
     if resp.get("code") != 200:
         row = db.query_one(
             "SELECT role_id FROM sys_role WHERE role_key='test_common' AND del_flag='0'")
         if row:
-            logger.info(f" test_common 已被其他 worker 创建: role_id={row['role_id']}")
-            # 确保 data_scope 已设置（另一个 worker 可能还没来得及设）
-            role_api.data_scope({
-                "roleId": row["role_id"], "dataScope": "5", "deptIds": [],
-            })
             return row["role_id"]
         raise AssertionError(f"创建 test_common 角色失败且未查到: {resp}")
 

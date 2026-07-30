@@ -24,7 +24,7 @@ _POOL = None
 
 
 def _get_pool():
-    """连接池单例（pool_size=10，支持 pytest-xdist 4 worker）"""
+    """连接池单例（pool_size=10）"""
     global _POOL
     if _POOL is None:
         config = {**DB_CONFIG}
