@@ -11,6 +11,11 @@ class RoleApi(BaseApi):
     def option_select(self) -> dict:
         return self._call(method="GET", path=f"{self.resource}/optionselect")
 
+    def data_scope(self, role_data: dict) -> dict:
+        """修改角色数据权限范围"""
+        return self._call(method="PUT", path=f"{self.resource}/dataScope",
+                          json=role_data)
+
     def dept_tree(self, role_id: int) -> dict:
         return self._call(method="GET", path=f"{self.resource}/deptTree/{role_id}")
 

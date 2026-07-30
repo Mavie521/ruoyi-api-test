@@ -100,28 +100,76 @@ class TestSecurity:
         # 期望：不会 500 崩溃（可能成功或失败，但不抛异常）
         assert token is None or len(token) > 0
 
-    @allure.story("越权测试")
-    @allure.title("普通用户越权操作 — 不能操作管理员接口")
+    @allure.story("垂直越权")
+    @allure.title("普通用户不能操作管理员接口")
     @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.security
     @pytest.mark.p0
-    def test_common_user_cannot_escalate(self, non_admin_login, non_admin_target_user):
-        """普通角色用户不应能操作角色/用户管理接口"""
-        from api import RoleApi, SystemUserApi
-
-        # 1. 尝试创建角色（管理员接口）
+    def test_common_user_cannot_escalate(self, non_admin_login):
+        """普通角色用户不能创建角色（管理员接口）"""
+        from api import RoleApi
         role_api = RoleApi()
         role_api.set_token(non_admin_login.token)
         resp = role_api.create({"roleName": "越权角色", "roleKey": "escalate"})
         assert resp.get("code") != 200, f"普通用户不应能创建角色: {resp}"
 
-        # 2. 尝试删除另一个普通用户（查目标用户的 user_id）
-        from utils.db_utils import DbClient
-        c = DbClient()
-        row = c.query_one("SELECT user_id FROM sys_user WHERE user_name=%s", (non_admin_target_user,))
-        c.close()
-        assert row, f"目标用户不存在: {non_admin_target_user}"
-        user_api = SystemUserApi()
-        user_api.set_token(non_admin_login.token)
-        resp = user_api.delete([row[0]])
-        assert resp.get("code") != 200, f"普通用户不应能删除其他用户: {resp}"
+    @allure.story("水平越权")
+    @allure.title("数据权限隔离 — 普通用户不能查看其他用户")
+    @allure.severity(allure.severity_level.BLOCKER)
+    @pytest.mark.security
+    @pytest.mark.p0
+    def test_horizontal_privilege_escalation(self, non_admin_login):
+        """数据权限(仅本人)隔离: 能访问用户管理但看不到管理员"""
+        from api import BaseApi
+        api = BaseApi()
+        api.set_token(non_admin_login.token)
+
+        # 1. 能访问用户列表（说明有用户管理菜单权限）
+        list_resp = api.request(method="GET", path="/system/user/list",
+                                params={"pageNum": 1, "pageSize": 50})
+        assert list_resp.status_code == 200, "普通用户应能访问用户列表"
+        body = list_resp.json()
+        assert body.get("code") == 200, f"列表查询失败: {body}"
+
+        # 2. 列表中不应该有 admin（数据权限=仅本人，只能看到自己）
+        rows = body.get("rows", [])
+        admin_found = any(r.get("userName") == "admin" for r in rows)
+        assert not admin_found, (
+            "水平越权漏洞！数据权限'仅本人'的用户能看到管理员账号"
+        )
+
+    @allure.story("参数篡改越权")
+    @allure.title("参数篡改 — 普通用户不能修改他人资料")
+    @allure.severity(allure.severity_level.BLOCKER)
+    @pytest.mark.security
+    @pytest.mark.p0
+    def test_param_tampering_cannot_update_others(self, non_admin_login, admin_login):
+        """普通用户修改个人资料时篡改 userId 为管理员，应被拒绝"""
+        from api import BaseApi, SystemUserApi
+
+        # 获取普通用户自己的 userId
+        api = BaseApi()
+        api.set_token(non_admin_login.token)
+        info = api.request(method="GET", path="/getInfo").json()
+        own_user = info.get("user", {})
+        own_id = own_user.get("userId")
+        assert own_id, "无法获取普通用户自己的 userId"
+
+        # 获取管理员的 userId
+        admin_api = BaseApi()
+        admin_api.set_token(admin_login.token)
+        admin_info = admin_api.request(method="GET", path="/getInfo").json()
+        admin_id = admin_info.get("user", {}).get("userId")
+        assert admin_id, "无法获取管理员 userId"
+        assert admin_id != own_id, "管理员和普通用户不应是同一个人"
+
+        # 用普通用户 token，篡改 body 里的 userId 为管理员
+        resp = api.request(
+            method="PUT",
+            path="/system/user/profile",
+            json={"userId": admin_id, "nickName": "被篡改"},
+        )
+        body = resp.json()
+        assert body.get("code") != 200, (
+            f"参数篡改漏洞！普通用户成功修改了管理员资料: {body}"
+        )

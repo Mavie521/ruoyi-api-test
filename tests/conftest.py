@@ -7,7 +7,6 @@ API 测试专用 fixtures —— Token 管理 + 数据库 + 环境注入
         user = db.query_one("SELECT * FROM sys_user WHERE user_name=%s", ("admin",))
 """
 import uuid
-import mysql.connector
 import pytest
 from config.config import ADMIN_USERNAME, ADMIN_PASSWORD
 from utils.logger import logger
@@ -16,6 +15,17 @@ from api import LoginApi, RoleApi, SystemUserApi, DeptApi, PostApi
 
 
 # ── 内部工具 ───────────────────────────────────────
+
+def _query_role_id(role_key: str):
+    """按 role_key 查询角色 ID（独立连接，清理用）"""
+    try:
+        c = DbClient()
+        row = c.query_one("SELECT role_id FROM sys_role WHERE role_key=%s", (role_key,))
+        c.close()
+        return row["role_id"] if row else None
+    except Exception:
+        return None
+
 
 def _cleanup_test_user(admin_token: str, username: str):
     """通过 API 软删除测试用户（不触发外键约束）"""
@@ -109,19 +119,40 @@ def non_admin_role(role_api, db):
         logger.info(f" 测试角色 test_common 已存在: role_id={row[0]}")
         return row[0]
 
+    # 查询「用户管理」菜单及其子菜单（用于水平越权测试）
+    user_mgmt = db.query_one(
+        "SELECT menu_id FROM sys_menu WHERE menu_name='用户管理' AND status='0'"
+    )
+    sub_menus = db.query(
+        "SELECT menu_id FROM sys_menu WHERE parent_id=%s AND status='0'",
+        (user_mgmt["menu_id"],)
+    ) if user_mgmt else []
+    menu_ids = [user_mgmt["menu_id"]] if user_mgmt else []
+    menu_ids += [m["menu_id"] for m in sub_menus] if sub_menus else []
+
     data = RoleApi.build_role_data(
         role_name="通用测试角色",
         role_key="test_common",
         role_sort=99,
-        menu_ids=[],
+        menu_ids=menu_ids,
     )
     resp = role_api.create(data)
     assert resp.get("code") == 200, f"创建 test_common 角色失败: {resp}"
 
     new_row = db.query_one("SELECT role_id FROM sys_role WHERE role_key='test_common'")
     assert new_row, "test_common 角色创建后未查到"
-    logger.info(f" 已创建测试角色 test_common: role_id={new_row[0]}")
-    return new_row[0]
+    role_id = new_row["role_id"]
+    logger.info(f" 已创建测试角色 test_common: role_id={role_id}")
+
+    # 设置数据权限为「仅本人」(data_scope=5)，水平越权核心
+    scope_resp = role_api.data_scope({
+        "roleId": role_id,
+        "dataScope": "5",
+        "deptIds": [],
+    })
+    logger.info(f" test_common 数据权限设为'仅本人': code={scope_resp.get('code')}")
+
+    return role_id
 
 
 @pytest.fixture(scope="session")
@@ -140,6 +171,8 @@ def non_admin_login(request, admin_login, non_admin_role, system_user_api):
     assert resp.get("code") == 200, f"创建权限测试用户失败: {resp}"
     logger.info(f" 创建权限测试用户: {username}")
 
+    # role_api / system_user_api复用是因为它们用同一个admintoken，可以共用。
+    # 但non_admin_login需要的是另一个用户的token，必须新建LoginApi()调用login(username, password)拿到不同单位token
     login = LoginApi()
     token = login.login(username, password)
     assert token, f"普通用户登录失败: {username}"
@@ -152,36 +185,14 @@ def non_admin_login(request, admin_login, non_admin_role, system_user_api):
     request.addfinalizer(cleanup)
 
 
-@pytest.fixture
-def non_admin_target_user(request, admin_login, non_admin_role, system_user_api):
-    """为越权删除测试准备的第二个测试用户（function 级别）"""
-    suffix = uuid.uuid4().hex[:8]
-    username = f"perm_target_{suffix}"
-
-    data = SystemUserApi.build_user_data(
-        username=username,
-        nick_name=f"删除目标_{suffix}",
-        role_ids=[non_admin_role],
-    )
-    resp = system_user_api.create(data)
-    assert resp.get("code") == 200, f"创建删除目标用户失败: {resp}"
-
-    yield username
-
-    def cleanup():
-        _cleanup_test_user(admin_login.token, username)
-
-    request.addfinalizer(cleanup)
-
-
 # ====================================================
 # 测试数据 fixtures
 # ====================================================
 
 
 @pytest.fixture
-def new_real_user_data(request, db) -> dict:
-    """生成真实用户数据，用例结束后自动清理（/system/user 需要 userName 等）"""
+def new_real_user_data(request, admin_login) -> dict:
+    """生成用户数据 + API 软删除清理，避免 SQL DELETE 外键约束"""
     suffix = uuid.uuid4().hex[:8]
     username = f"test_real_{suffix}"
     data = SystemUserApi.build_user_data(
@@ -195,21 +206,13 @@ def new_real_user_data(request, db) -> dict:
     yield data
 
     def cleanup():
-        try:
-            db.execute("DELETE FROM sys_user WHERE user_name=%s", (username,))
-            logger.info(f"  清理测试用户: {username}")
-        except mysql.connector.Error as e:
-            logger.warning(f"  清理用户失败（可能已被删除）: {e}")
-
+        _cleanup_test_user(admin_login.token, username)
     request.addfinalizer(cleanup)
 
 
 @pytest.fixture
-def new_role_data(request, db) -> dict:
-    """
-    生成新角色数据
-    自动清理：用例结束后删除创建的角色（防止测试数据污染）
-    """
+def new_role_data(request, admin_login) -> dict:
+    """生成角色数据 + API 软删除清理"""
     suffix = uuid.uuid4().hex[:8]
     role_key = f"test_role_{suffix}"
     data = RoleApi.build_role_data(
@@ -219,16 +222,16 @@ def new_role_data(request, db) -> dict:
         menu_ids=[],
     )
 
-    # yield 之前的代码在测试前执行
     yield data
 
-    # === 【新增】测试后自动清理创建的角色 ===
     def cleanup():
         try:
-            db.execute("DELETE FROM sys_role WHERE role_key=%s", (role_key,))
-            logger.info(f"  清理测试角色: {role_key}")
-        except mysql.connector.Error as e:
-            logger.warning(f"  清理失败（可能已被删除）: {e}")
-
-    # 注册清理函数，确保即使断言失败也会执行
+            uid_row = _query_role_id(role_key)
+            if uid_row:
+                ra = RoleApi()
+                ra.set_token(admin_login.token)
+                ra.delete([uid_row])
+                logger.info(f"  清理测试角色: {role_key}")
+        except Exception as e:
+            logger.warning(f"  清理角色失败: {e}")
     request.addfinalizer(cleanup)
