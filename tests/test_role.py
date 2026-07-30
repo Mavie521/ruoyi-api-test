@@ -84,7 +84,7 @@ class TestRole:
         new_name = f"{new_role_data['roleName']}_已编辑"
         update_data = role_api.build_role_data(
             role_name=new_name,
-            role_key=new_role_data["roleKey"],
+            role_key=new_rol1e_data["roleKey"],
             role_sort=2,
             role_id=role_id,
             menu_ids=[],

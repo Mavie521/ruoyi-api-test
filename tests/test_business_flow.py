@@ -145,7 +145,7 @@ class TestBusinessFlow:
     @allure.title("角色→菜单→路由 权限链验证")
     @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.p0
-    def test_rbac_permission_chain(self, login_api, role_api, system_user_api):
+    def test_rbac_permission_chain(self, admin_login, role_api, system_user_api):
         """验证 RBAC 权限模型: 角色有菜单→用户有角色→用户有路由"""
         role_id = _first_id(role_api, "roleId")
         user_id = _first_id(system_user_api, "userId")
@@ -165,7 +165,7 @@ class TestBusinessFlow:
             logger.info(f"   用户 {user_id} 角色数: {len(user_roles)}")
 
         with allure.step("3. 验证用户路由包含菜单"):
-            routers = login_api.get_routers()
+            routers = admin_login.get_routers()
             assert_jsonpath_exact(routers, "$.code", 200)
             router_data = routers.get("data", [])
             assert len(router_data) > 0, "用户应有可访问的路由"

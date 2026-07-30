@@ -15,6 +15,25 @@ from utils.db_utils import DbClient
 from api import LoginApi, RoleApi, SystemUserApi, DeptApi, PostApi
 
 
+# ── 内部工具 ───────────────────────────────────────
+
+def _cleanup_test_user(admin_token: str, username: str):
+    """通过 API 软删除测试用户（不触发外键约束）"""
+    try:
+        c = DbClient()
+        uid_row = c.query_one("SELECT user_id FROM sys_user WHERE user_name=%s", (username,))
+        c.close()
+        if uid_row:
+            ua = SystemUserApi()
+            ua.set_token(admin_token)
+            ua.delete([uid_row[0]])
+            logger.info(f"  清理测试用户: {username}")
+    except Exception as e:
+        logger.warning(f"  清理测试用户失败: {e}")
+
+
+# ── fixtures ───────────────────────────────────────
+
 @pytest.fixture(scope="session")
 def admin_login() -> LoginApi:
     """
@@ -27,12 +46,6 @@ def admin_login() -> LoginApi:
     assert token, f"管理员登录失败！请检查 {ADMIN_USERNAME}@BASE_URL"
     logger.info(" 管理员登录成功，token 已获取")
     return api
-
-
-@pytest.fixture(scope="session")
-def login_api(admin_login) -> LoginApi:
-    """已登录的 LoginApi"""
-    return admin_login
 
 
 @pytest.fixture(scope="session")
@@ -151,44 +164,25 @@ def non_admin_login(request, admin_login, non_admin_role):
     yield login
 
     def cleanup():
-        try:
-            from utils.db_utils import DbClient
-            c = DbClient()
-            uid_row = c.query_one("SELECT user_id FROM sys_user WHERE user_name=%s", (username,))
-            c.close()
-            if uid_row:
-                ua = SystemUserApi()
-                ua.set_token(admin_login.token)
-                ua.delete([uid_row[0]])
-                logger.info(f"  清理权限测试用户: {username}")
-        except Exception as e:
-            logger.warning(f"  清理权限测试用户失败: {e}")
+        _cleanup_test_user(admin_login.token, username)
 
     request.addfinalizer(cleanup)
 
 
 @pytest.fixture
-def non_admin_target_user(request, admin_login):
+def non_admin_target_user(request, admin_login, non_admin_role):
     """
     为越权删除测试准备的第二个测试用户（普通角色，function 级别）
     """
     suffix = uuid.uuid4().hex[:8]
     username = f"perm_target_{suffix}"
-    password = "test123456"
-
-    # 先查 test_common role_id
-    from utils.db_utils import DbClient
-    c = DbClient()
-    row = c.query_one("SELECT role_id FROM sys_role WHERE role_key='test_common'")
-    c.close()
 
     user_api = SystemUserApi()
     user_api.set_token(admin_login.token)
     data = SystemUserApi.build_user_data(
         username=username,
-        password=password,
         nick_name=f"删除目标_{suffix}",
-        role_ids=[row[0]] if row else [],
+        role_ids=[non_admin_role],
     )
     resp = user_api.create(data)
     assert resp.get("code") == 200, f"创建删除目标用户失败: {resp}"
@@ -196,17 +190,7 @@ def non_admin_target_user(request, admin_login):
     yield username
 
     def cleanup():
-        try:
-            c = DbClient()
-            uid = c.query_one("SELECT user_id FROM sys_user WHERE user_name=%s", (username,))
-            c.close()
-            if uid:
-                ua = SystemUserApi()
-                ua.set_token(admin_login.token)
-                ua.delete([uid[0]])
-                logger.info(f"  清理删除目标用户: {username}")
-        except Exception as e:
-            logger.warning(f"  清理删除目标用户失败: {e}")
+        _cleanup_test_user(admin_login.token, username)
 
     request.addfinalizer(cleanup)
 
