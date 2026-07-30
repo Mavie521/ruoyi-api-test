@@ -66,15 +66,13 @@ class TestLogin:
     @allure.title("禁用后已签发 Token 仍有效（JWT 无状态缺陷）")
     @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.p0
-    @pytest.mark.xfail(
-        reason=(
-            "若依原生 JWT 无状态缺陷：Token 签发后不维护黑名单，"
-            "账号禁用只拦截新登录，已下发的有效 JWT 仍然放行。"
-            "修复建议：引入 Redis Token 黑名单 + 网关层拦截校验。"
-        )
-    )
     def test_token_rejected_after_user_disabled(self, system_user_api, db):
-        """验证：用户登录后被禁用，旧 Token 是否被吊销"""
+        """
+        验证「登录后禁用 → 旧 Token 是否失效」
+        若依没有独立的 /system/user/changeStatus 接口，
+        只能通过通用编辑接口 update() 修改 status 字段。
+        原生 JWT 无黑名单：账号禁用只拦截新登录，已下发的 Token 仍然放行。
+        """
         suffix = uuid.uuid4().hex[:8]
         username = f"revoked_{suffix}"
 
@@ -88,20 +86,31 @@ class TestLogin:
         info = user_login.get_info()
         assert_jsonpath_exact(info, "$.code", 200)
 
-        # 禁用用户（通过 update 接口设置 status='1'）
         uid = _find_user_id(db, username)
-        system_user_api.update({"userId": uid, "status": "1"})
 
-        # 验证：禁用后禁止新登录
-        api2 = LoginApi()
-        token2 = api2.login(username, "123456")
-        assert token2 is None, "禁用用户不应能重新登录"
+        try:
+            # ① 通过通用编辑接口禁用账号（若依无独立用户 changeStatus 接口）
+            system_user_api.update({"userId": uid, "status": "1"})
 
-        # 缺陷：已签发的旧 Token 仍然有效
-        info_after = user_login.get_info()
-        assert info_after.get("code") == 200, (
-            "旧 Token 在禁用后应被拒绝，但若依 JWT 不维护黑名单\n"
-            "修复建议：引入 Redis Token 黑名单 + 网关层拦截校验"
-        )
+            # ② 数据库校验：确认禁用生效
+            row = db.query_one(
+                "SELECT status FROM sys_user WHERE user_id=%s", (uid,))
+            assert row and row["status"] == "1", (
+                f"禁用未生效！期望 status='1'，实际: {row}"
+            )
 
-        system_user_api.delete([uid])
+            # ③ 禁用后禁止新登录
+            api2 = LoginApi()
+            token2 = api2.login(username, "123456")
+            assert token2 is None, "禁用用户不应能重新登录"
+
+            # ④ 已签发 Token 行为（若依 JWT 无黑名单，Token 仍有效）
+            info_after = user_login.get_info()
+            assert info_after.get("code") == 200, (
+                "旧 Token 在禁用后仍可访问——原生 JWT 无黑名单，"
+                "修复建议：引入 Redis Token 黑名单 + 网关层拦截"
+            )
+        finally:
+            # ⑤ 恢复账号状态为正常（保证数据干净）
+            system_user_api.update({"userId": uid, "status": "0"})
+            system_user_api.delete([uid])
