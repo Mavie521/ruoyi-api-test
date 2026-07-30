@@ -85,7 +85,7 @@ class TestLogin:
         system_user_api.change_status(userId=uid, status="1")
 
         info_after = user_login.get_info()
-        assert_jsonpath_exact(info_after, "$.code", 500,
-            message="禁用后的 token 应被系统拒绝")
+        # 禁用后的 token 应被系统拒绝
+        assert info_after.get("code") == 500, f"禁用后的 token 应被拒绝: {info_after}"
 
         system_user_api.delete([uid])

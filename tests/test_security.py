@@ -139,37 +139,33 @@ class TestSecurity:
         )
 
     @allure.story("参数篡改越权")
-    @allure.title("参数篡改 — 普通用户不能修改他人资料")
+    @allure.title("参数篡改 — 修改资料时篡改 userId 不应影响他人")
     @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.security
     @pytest.mark.p0
     def test_param_tampering_cannot_update_others(self, non_admin_login, admin_login):
-        """普通用户修改个人资料时篡改 userId 为管理员，应被拒绝"""
-        from api import BaseApi, SystemUserApi
+        """普通用户修改资料时在 body 中篡改 userId，系统应忽略或拒绝"""
+        from api import BaseApi
 
-        # 获取普通用户自己的 userId
-        api = BaseApi()
-        api.set_token(non_admin_login.token)
-        info = api.request(method="GET", path="/getInfo").json()
-        own_user = info.get("user", {})
-        own_id = own_user.get("userId")
-        assert own_id, "无法获取普通用户自己的 userId"
-
-        # 获取管理员的 userId
+        # 获取管理员原始昵称
         admin_api = BaseApi()
         admin_api.set_token(admin_login.token)
-        admin_info = admin_api.request(method="GET", path="/getInfo").json()
-        admin_id = admin_info.get("user", {}).get("userId")
+        admin_orig = admin_api.request(method="GET", path="/getInfo").json()
+        admin_nick = admin_orig.get("user", {}).get("nickName", "")
+        admin_id = admin_orig.get("user", {}).get("userId")
         assert admin_id, "无法获取管理员 userId"
-        assert admin_id != own_id, "管理员和普通用户不应是同一个人"
 
-        # 用普通用户 token，篡改 body 里的 userId 为管理员
+        # 普通用户 token，body 里塞管理员的 userId
+        api = BaseApi()
+        api.set_token(non_admin_login.token)
         resp = api.request(
             method="PUT",
             path="/system/user/profile",
-            json={"userId": admin_id, "nickName": "被篡改"},
+            json={"userId": admin_id, "nickName": "参数篡改攻击"},
         )
-        body = resp.json()
-        assert body.get("code") != 200, (
-            f"参数篡改漏洞！普通用户成功修改了管理员资料: {body}"
+
+        # 查管理员资料 — 昵称不应被修改
+        admin_after = admin_api.request(method="GET", path="/getInfo").json()
+        assert admin_after.get("user", {}).get("nickName") == admin_nick, (
+            f"参数篡改漏洞！管理员的昵称被普通用户修改了"
         )

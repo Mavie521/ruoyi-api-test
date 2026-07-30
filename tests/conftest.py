@@ -116,8 +116,18 @@ def non_admin_role(role_api, db):
         "SELECT role_id FROM sys_role WHERE role_key='test_common' AND del_flag='0'"
     )
     if row:
-        logger.info(f" 测试角色 test_common 已存在: role_id={row[0]}")
-        return row[0]
+        # 检查是否已有用户管理菜单权限
+        has_menu = db.query_one(
+            "SELECT 1 FROM sys_role_menu rm "
+            "JOIN sys_menu m ON rm.menu_id=m.menu_id "
+            "WHERE rm.role_id=%s AND m.menu_name='用户管理'", (row["role_id"],)
+        )
+        if not has_menu:
+            logger.info(f" test_common 角色缺少用户管理菜单，删除后重建")
+            role_api.delete([row["role_id"]])
+        else:
+            logger.info(f" 测试角色 test_common 已存在: role_id={row['role_id']}")
+            return row["role_id"]
 
     # 查询「用户管理」菜单及其子菜单（用于水平越权测试）
     user_mgmt = db.query_one(
