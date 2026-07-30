@@ -63,7 +63,10 @@ export default function EnvironmentPage() {
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setEditing(null)}>
           <div className="bg-surface rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold">{editing.id ? '编辑环境' : '新增环境'}</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">{editing.id ? '编辑环境' : '新增环境'}</h3>
+              <button onClick={() => setEditing(null)} className="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+            </div>
             <input type="text" placeholder="名称 (如 dev/staging/prod)" value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary" />
