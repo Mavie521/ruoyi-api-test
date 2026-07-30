@@ -18,7 +18,7 @@ logger.add(
     colorize=True,
 )
 
-# 文件日志（全部）
+# 文件日志（全部，enqueue=True 异步写入，多线程安全）
 logger.add(
     LOG_DIR / "ruoyi_api_{time:YYYY-MM-DD}.log",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
@@ -26,9 +26,10 @@ logger.add(
     rotation="100 MB",
     retention="30 days",
     encoding="utf-8",
+    enqueue=True,
 )
 
-# 文件日志（错误）
+# 文件日志（错误，enqueue=True 异步写入）
 logger.add(
     LOG_DIR / "ruoyi_api_error_{time:YYYY-MM-DD}.log",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
@@ -38,6 +39,7 @@ logger.add(
     encoding="utf-8",
     backtrace=True,
     diagnose=True,
+    enqueue=True,
 )
 
 __all__ = ["logger"]

@@ -8,6 +8,7 @@ pytest-rerunfailures>=12.0   # 失败重试
 
 # HTTP 客户端
 requests>=2.31.0
+urllib3>=1.26.0
 
 # 测试报告
 allure-pytest>=2.13.0

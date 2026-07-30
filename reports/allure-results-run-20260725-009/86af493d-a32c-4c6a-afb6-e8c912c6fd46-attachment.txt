@@ -1,0 +1,15 @@
+POST http://localhost:8080/login
+
+ Headers:
+{
+  "User-Agent": "python-requests/2.34.2",
+  "Accept-Encoding": "gzip, deflate, br, zstd",
+  "Accept": "*/*",
+  "Connection": "keep-alive"
+}
+
+ Json:
+{
+  "username": "admin",
+  "password": "admin123"
+}

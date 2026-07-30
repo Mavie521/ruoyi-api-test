@@ -2,7 +2,7 @@
 # DingTalk notification — 从环境变量读取敏感信息，jq 构建 JSON，校验推送结果
 
 # ── 配置：从环境变量读取（无环境变量时使用默认值，但 Token 必须有） ──
-TOKEN="${DINGTALK_TOKEN:-26b5bada9e95f4f06cbb126b8a5d1d59f350a140f60a199d3f71d0ed88bdc804}"
+TOKEN="${DINGTALK_TOKEN:-}"
 HOST="${REPORT_HOST:-192.168.149.100}"
 JENKINS_PORT="${JENKINS_PORT:-8081}"
 NGINX_PORT="${NGINX_PORT:-8088}"

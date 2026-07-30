@@ -19,6 +19,11 @@ export default function RunTriggerModal({ isOpen, onClose, onSuccess }) {
       .then((res) => {
         if (res?.data?.environments) {
           setEnvOptions(res.data.environments)
+          // 自动填充默认环境的 base_url
+          const defaultEnv = res.data.environments.find(e => e.name === form.environment)
+          if (defaultEnv?.base_url) {
+            setForm((prev) => ({ ...prev, base_url: defaultEnv.base_url }))
+          }
         } else if (res?.data?.options) {
           setEnvOptions(res.data.options.map(n => ({ name: n, base_url: '' })))
         }

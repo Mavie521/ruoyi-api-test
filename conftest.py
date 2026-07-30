@@ -63,27 +63,19 @@ def pytest_runtest_makereport(item, call):
     report = outcome.get_result()
 
     if report.when == "call" and report.failed:
-        if call.excinfo:
-            exc_type = call.excinfo.type.__name__
-            exc_msg = str(call.excinfo.value)
-            allure.attach(
-                f"异常类型: {exc_type}\n\n异常信息:\n{exc_msg}",
-                name="失败原因",
-                attachment_type=allure.attachment_type.TEXT,
-            )
-
-        node_id = report.nodeid
-        allure.attach(
-            f"测试节点: {node_id}\n"
-            f"运行时间: {datetime.now().strftime('%H:%M:%S')}",
-            name="测试定位信息",
-            attachment_type=allure.attachment_type.TEXT,
-        )
-
-        from utils.logger import logger
-        logger.error(f"[FAIL] {node_id}")
-        if call.excinfo:
-            logger.error(f"  Reason: {call.excinfo.value}")
+        try:
+            from utils.logger import logger
+            if call.excinfo:
+                allure.attach(
+                    f"异常类型: {call.excinfo.type.__name__}\n\n异常信息:\n{call.excinfo.value}",
+                    name="失败原因",
+                    attachment_type=allure.attachment_type.TEXT,
+                )
+                logger.error(f"[FAIL] {report.nodeid} — {call.excinfo.value}")
+            else:
+                logger.error(f"[FAIL] {report.nodeid}")
+        except Exception as e:
+            print(f"[WARN] 日志/Allure 挂附件失败（不影响测试结果）: {e}")
 
 
 @pytest.hookimpl(tryfirst=True)

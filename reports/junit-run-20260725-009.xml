@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="3" failures="1" skipped="0" tests="4" time="17.481" timestamp="2026-07-25T16:31:37.965108+08:00" hostname="yy"><testcase classname="tests.test_role.TestRole" name="test_option_select" time="8.159"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。&quot;))&quot;">D:\Python314\Lib\site-packages\urllib3\connection.py:204: in _new_conn
+    sock = connection.create_connection(
+D:\Python314\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+D:\Python314\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+E   ConnectionRefusedError: [WinError 10061] 由于目标计算机积极拒绝，无法连接。
+
+The above exception was the direct cause of the following exception:
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:788: in urlopen
+    response = self._make_request(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:493: in _make_request
+    conn.request(
+D:\Python314\Lib\site-packages\urllib3\connection.py:500: in request
+    self.endheaders()
+D:\Python314\Lib\http\client.py:1362: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+D:\Python314\Lib\http\client.py:1122: in _send_output
+    self.send(msg)
+D:\Python314\Lib\http\client.py:1066: in send
+    self.connect()
+D:\Python314\Lib\site-packages\urllib3\connection.py:331: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\urllib3\connection.py:219: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。
+
+The above exception was the direct cause of the following exception:
+D:\Python314\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:872: in urlopen
+    return self.urlopen(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:842: in urlopen
+    retries = retries.increment(
+D:\Python314\Lib\site-packages\urllib3\util\retry.py:543: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。"))
+
+During handling of the above exception, another exception occurred:
+tests\conftest.py:28: in admin_login
+    token = api.login(ADMIN_USERNAME, ADMIN_PASSWORD)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+api\login_api.py:17: in login
+    res = self.request(method="POST", path="/login", json=body).json()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+api\base_api.py:73: in request
+    res = self.session.request(method, url, headers=request_headers, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。"))</error></testcase><testcase classname="tests.test_role.TestRole" name="test_dept_tree" time="0.001"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。&quot;))&quot;">D:\Python314\Lib\site-packages\urllib3\connection.py:204: in _new_conn
+    sock = connection.create_connection(
+D:\Python314\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+D:\Python314\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+E   ConnectionRefusedError: [WinError 10061] 由于目标计算机积极拒绝，无法连接。
+
+The above exception was the direct cause of the following exception:
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:788: in urlopen
+    response = self._make_request(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:493: in _make_request
+    conn.request(
+D:\Python314\Lib\site-packages\urllib3\connection.py:500: in request
+    self.endheaders()
+D:\Python314\Lib\http\client.py:1362: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+D:\Python314\Lib\http\client.py:1122: in _send_output
+    self.send(msg)
+D:\Python314\Lib\http\client.py:1066: in send
+    self.connect()
+D:\Python314\Lib\site-packages\urllib3\connection.py:331: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\urllib3\connection.py:219: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。
+
+The above exception was the direct cause of the following exception:
+D:\Python314\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:872: in urlopen
+    return self.urlopen(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:842: in urlopen
+    retries = retries.increment(
+D:\Python314\Lib\site-packages\urllib3\util\retry.py:543: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。"))
+
+During handling of the above exception, another exception occurred:
+tests\conftest.py:28: in admin_login
+    token = api.login(ADMIN_USERNAME, ADMIN_PASSWORD)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+api\login_api.py:17: in login
+    res = self.request(method="POST", path="/login", json=body).json()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+api\base_api.py:73: in request
+    res = self.session.request(method, url, headers=request_headers, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。"))</error></testcase><testcase classname="tests.test_role.TestRole" name="test_auth_user_lists" time="0.001"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。&quot;))&quot;">D:\Python314\Lib\site-packages\urllib3\connection.py:204: in _new_conn
+    sock = connection.create_connection(
+D:\Python314\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+D:\Python314\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+E   ConnectionRefusedError: [WinError 10061] 由于目标计算机积极拒绝，无法连接。
+
+The above exception was the direct cause of the following exception:
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:788: in urlopen
+    response = self._make_request(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:493: in _make_request
+    conn.request(
+D:\Python314\Lib\site-packages\urllib3\connection.py:500: in request
+    self.endheaders()
+D:\Python314\Lib\http\client.py:1362: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+D:\Python314\Lib\http\client.py:1122: in _send_output
+    self.send(msg)
+D:\Python314\Lib\http\client.py:1066: in send
+    self.connect()
+D:\Python314\Lib\site-packages\urllib3\connection.py:331: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\urllib3\connection.py:219: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。
+
+The above exception was the direct cause of the following exception:
+D:\Python314\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:872: in urlopen
+    return self.urlopen(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:842: in urlopen
+    retries = retries.increment(
+D:\Python314\Lib\site-packages\urllib3\util\retry.py:543: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。"))
+
+During handling of the above exception, another exception occurred:
+tests\conftest.py:28: in admin_login
+    token = api.login(ADMIN_USERNAME, ADMIN_PASSWORD)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+api\login_api.py:17: in login
+    res = self.request(method="POST", path="/login", json=body).json()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+api\base_api.py:73: in request
+    res = self.session.request(method, url, headers=request_headers, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。"))</error></testcase><testcase classname="tests.test_security.TestSecurity" name="test_extreme_length_input" time="8.116"><failure message="requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。&quot;))">D:\Python314\Lib\site-packages\urllib3\connection.py:204: in _new_conn
+    sock = connection.create_connection(
+D:\Python314\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+D:\Python314\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+E   ConnectionRefusedError: [WinError 10061] 由于目标计算机积极拒绝，无法连接。
+
+The above exception was the direct cause of the following exception:
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:788: in urlopen
+    response = self._make_request(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:493: in _make_request
+    conn.request(
+D:\Python314\Lib\site-packages\urllib3\connection.py:500: in request
+    self.endheaders()
+D:\Python314\Lib\http\client.py:1362: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+D:\Python314\Lib\http\client.py:1122: in _send_output
+    self.send(msg)
+D:\Python314\Lib\http\client.py:1066: in send
+    self.connect()
+D:\Python314\Lib\site-packages\urllib3\connection.py:331: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\urllib3\connection.py:219: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。
+
+The above exception was the direct cause of the following exception:
+D:\Python314\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:872: in urlopen
+    return self.urlopen(
+D:\Python314\Lib\site-packages\urllib3\connectionpool.py:842: in urlopen
+    retries = retries.increment(
+D:\Python314\Lib\site-packages\urllib3\util\retry.py:543: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。"))
+
+During handling of the above exception, another exception occurred:
+tests\test_security.py:98: in test_extreme_length_input
+    token = api.login(long_str, long_str)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+api\login_api.py:17: in login
+    res = self.request(method="POST", path="/login", json=body).json()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+api\base_api.py:73: in request
+    res = self.session.request(method, url, headers=request_headers, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+D:\Python314\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。"))</failure></testcase></testsuite></testsuites>

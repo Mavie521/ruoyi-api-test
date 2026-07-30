@@ -53,7 +53,7 @@ test-keyword:                               ## 按关键字过滤: make test-key
 # ── 代码质量 ──────────────────────────────────
 
 lint:                                       ## pylint 静态检查
-	pylint api/ tests/ utils/ config/
+	pylint api/ tests/ utils/ config/ testcases/ scripts/performance_test.py run.py conftest.py utils/assertions.py
 
 format:                                     ## black 自动格式化
 	black api/ tests/ utils/ config/ scripts/
@@ -97,11 +97,11 @@ docker-down:                                ## 关闭 Docker 所有服务
 
 docker-test:                                ## Docker 环境跑 P0 测试
 	docker compose --profile test run --rm test-runner \
-		sh -c "pytest tests/ -m p0 --alluredir=reports/allure-results -v && \
+		sh -c "pytest tests/ -m p0 --alluredir=reports/allure-results -v"
 
 docker-test-all:                            ## Docker 环境跑全量测试
 	docker compose --profile test run --rm test-runner \
-		sh -c "pytest tests/ testcases/test_excel_driver.py --alluredir=reports/allure-results -v && \
+		sh -c "pytest tests/ --alluredir=reports/allure-results -v"
 
 docker-report:                              ## Docker 生成 Allure 报告
 	docker compose --profile report run --rm allure-reporter

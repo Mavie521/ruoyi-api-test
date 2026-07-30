@@ -1,71 +1,60 @@
-"""
-Allure 动态报告工具
-
-功能:
-1. allure_init() — Excel 数据驱动模式下的动态属性初始化
-2. attach_request() — 格式化 attach HTTP 请求
-3. attach_response() — 格式化 attach HTTP 响应
-4. step() — 更清晰的分步装饰器
-"""
+"""Allure 报告附件工具（自动过滤敏感字段）"""
 import json
 import allure
 import requests
 
+_SENSITIVE_HEADERS = {"authorization", "cookie", "set-cookie", "token", "x-auth-token"}
+_SENSITIVE_BODY_FIELDS = {"token", "access_token", "refresh_token", "password", "secret"}
+
+
+def _mask(val: str) -> str:
+    """脱敏：显示前4+后4，中间变 *"""
+    s = str(val)
+    return s[:4] + "****" + s[-4:] if len(s) > 12 else s[:2] + "****" + s[-2:]
+
+
+def _clean_headers(headers: dict) -> dict:
+    """脱敏请求头中的敏感字段"""
+    return {k: (_mask(v) if k.lower() in _SENSITIVE_HEADERS else v) for k, v in headers.items()}
+
+
+def _clean_body(body) -> dict:
+    """脱敏 JSON 体中的敏感字段"""
+    if isinstance(body, dict):
+        return {k: (_mask(v) if k in _SENSITIVE_BODY_FIELDS else _clean_body(v)) for k, v in body.items()}
+    if isinstance(body, list):
+        return [_clean_body(i) for i in body]
+    return body
+
 
 def allure_init(case: dict):
-    """
-    根据 Excel 用例行数据动态初始化 Allure 属性
-    参数 case 支持的 key: feature, story, title, severity
-    """
     allure.dynamic.feature(case.get("feature", "未分类模块"))
     allure.dynamic.story(case.get("story", "未分类场景"))
     allure.dynamic.title(f"TC{case.get('id', 'N/A')} - {case.get('title', '未命名用例')}")
 
-    severity_map = {
-        "阻塞": allure.severity_level.BLOCKER,
-        "严重": allure.severity_level.CRITICAL,
-        "一般": allure.severity_level.NORMAL,
-        "轻微": allure.severity_level.MINOR,
-        "建议": allure.severity_level.TRIVIAL,
-    }
-    severity = case.get("severity", "一般")
-    if severity in severity_map:
-        allure.dynamic.severity(severity_map[severity])
-
 
 def attach_request(method: str, url: str, **kwargs):
-    """将 HTTP 请求 attach 到 Allure 报告"""
+    """将 HTTP 请求 attach 到 Allure 报告（敏感请求头自动脱敏）"""
     parts = [f"{method.upper()} {url}"]
     if kwargs.get("headers"):
-        parts.append(f"\n Headers:\n{_pretty_json(kwargs['headers'])}")
-    if kwargs.get("params"):
-        parts.append(f"\n Params:\n{_pretty_json(kwargs['params'])}")
-    if kwargs.get("json"):
-        parts.append(f"\n JSON Body:\n{_pretty_json(kwargs['json'])}")
-    if kwargs.get("data"):
-        parts.append(f"\n Form Data:\n{_pretty_json(kwargs['data'])}")
-
-    allure.attach(
-        "\n".join(parts),
-        name=f" 请求 ({method})",
-        attachment_type=allure.attachment_type.TEXT,
-    )
+        parts.append(f"\n Headers:\n{_pretty_json(_clean_headers(kwargs['headers']))}")
+    for key in ("params", "json", "data"):
+        if kwargs.get(key):
+            parts.append(f"\n {key.capitalize()}:\n{_pretty_json(kwargs[key])}")
+    allure.attach("\n".join(parts), name=f" 请求 ({method})", attachment_type=allure.attachment_type.TEXT)
 
 
 def attach_response(res: requests.Response):
-    """将 HTTP 响应 attach 到 Allure 报告"""
+    """将 HTTP 响应 attach 到 Allure 报告（敏感字段自动脱敏）"""
     try:
-        body = res.json()
-        body_str = _pretty_json(body)
-    except (ValueError, TypeError, json.JSONDecodeError):
+        body = json.loads(res.content.decode("utf-8"))
+        body_str = _pretty_json(_clean_body(body))
+    except (ValueError, TypeError, json.JSONDecodeError, UnicodeDecodeError):
         body_str = res.text[:2000]
-
-    text = (
-        f" 状态码: {res.status_code}\n"
-        f" 耗时: {res.elapsed.total_seconds():.2f}s\n"
-        f"\n Response Body:\n{body_str}"
+    allure.attach(
+        f" 状态码: {res.status_code}\n 耗时: {res.elapsed.total_seconds():.2f}s\n\n Response Body:\n{body_str}",
+        name=" 响应", attachment_type=allure.attachment_type.TEXT,
     )
-    allure.attach(text, name=" 响应", attachment_type=allure.attachment_type.TEXT)
 
 
 def attach_db_result(sql: str, results: list, elapsed: float = 0):
@@ -79,7 +68,6 @@ def attach_db_result(sql: str, results: list, elapsed: float = 0):
 
 
 def _pretty_json(data) -> str:
-    """JSON 格式化输出"""
     if isinstance(data, str):
         try:
             data = json.loads(data)

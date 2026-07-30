@@ -2,7 +2,7 @@ const outcomeMap = {
   passed:  { label: '通过', cls: 'badge-passed' },
   failed:  { label: '失败', cls: 'badge-failed' },
   skipped: { label: '跳过', cls: 'badge-pending' },
-  error:   { label: '错误', cls: 'badge-error' },
+  error:   { label: '失败', cls: 'badge-failed' },
 }
 
 export default function ResultTable({ results = [] }) {
@@ -36,11 +36,11 @@ export default function ResultTable({ results = [] }) {
               <td className="py-2 px-3 text-gray-400">{r.duration_sec}s</td>
               <td className="py-2 px-3">
                 {r.message ? (
-                  <details>
-                    <summary className="text-red-400 cursor-pointer hover:text-red-300">
-                      {r.message.split('\n')[0].slice(0, 80)}
+                  <details className="group">
+                    <summary className="text-red-400 cursor-pointer hover:text-red-300 truncate max-w-xs" title={r.message.split('\n')[0]}>
+                      {r.message.split('\n')[0].slice(0, 60)}{r.message.split('\n')[0].length > 60 ? '…' : ''}
                     </summary>
-                    <pre className="text-xs text-gray-400 mt-1 whitespace-pre-wrap max-w-lg">{r.message}</pre>
+                    <pre className="text-xs text-gray-400 mt-1 whitespace-pre-wrap max-w-lg max-h-40 overflow-y-auto">{r.message}</pre>
                   </details>
                 ) : (
                   <span className="text-gray-500">—</span>

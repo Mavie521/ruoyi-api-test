@@ -1,17 +1,7 @@
-"""
-基础 API 封装 —— requests.Session 封装 + Token 自动管理 + 超时重试
-
-核心功能:
-1. 自动从 config 加载 BASE_URL
-2. 提供 get/post/put/delete 通用方法（带日志 + Allure 步骤 + 自动附件）
-3. Token 自动管理：set_token() 后后续请求自动携带
-4. 【新增】统一超时（15s）+ 失败自动重试 1 次（网络波动容错）
-5. 【新增】空响应/异常响应容错（避免 500 时程序崩溃）
-"""
-import json as json_lib
+"""requests.Session 封装 + Token 管理 + 超时重试 + 通用 CRUD + 通用请求入口"""
+from typing import Union, List
 import allure
 import requests
-from requests import Response
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from config.config import BASE_URL, DEFAULT_TIMEOUT
@@ -20,133 +10,106 @@ from utils.allure_utils import attach_request, attach_response
 
 
 class BaseApi:
-    """所有 API 对象的基类，封装请求发送、token 管理、日志、重试"""
+    """所有 API 对象的基类 —— 统一管理 Session / Token / 重试 / CRUD 模板方法
+    子类覆盖 resource 属性即可获得完整 CRUD 能力（如 resource="/system/role"）。
+    不需要 CRUD 的子类（如 LoginApi）不设置 resource 即可。
+    """
+    #子类只需要定义 resource="/system/role"，自动拥有一套 CRUD 接口调用方法
+    resource: str = ""
 
     def __init__(self):
-        self.session = requests.Session()
         self.base_url = BASE_URL.rstrip("/")
-        self._token = None
-        self._last_response = None
-        # === 【新增】统一超时配置（15s，避免接口卡死） ===
+        self._token = None  #私有变量，存放登录凭证
         self.timeout = DEFAULT_TIMEOUT
 
-        # === 【新增】requests 自动重试（最多重试 1 次，间隔 1s） ===
-        retry_strategy = Retry(
-            total=1,                        # 总重试次数（排除首次）
-            backoff_factor=1,               # 重试间隔 1s
-            status_forcelist=[500, 502, 503, 504],  # 服务端错误才重试
+        self.session = requests.Session()
+        # requests底层用来定制网络行为的适配器。
+        # 默认的requests没有自动重试、连接池控制能力；
+        # HTTPAdapter允许我们挂载自定义策略：连接复用、失败重试。配合Retry类，实现接口5xx错误自动重试。
+        adapter = HTTPAdapter(
+            max_retries=Retry(
+            total=2, connect=1, read=0, status=1, other=0,
+            backoff_factor=1,
+            status_forcelist=[500, 502, 503, 504],
             allowed_methods=["GET", "POST", "PUT", "DELETE"],
-        )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
+        ))
+        #session 设置规则：只要发起 http:// 或者https://开头的请求，全部套用我们写好的「重试策略adapter」
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 
-    # ---------------------------------------------------------
-    # Token 管理
-    # ---------------------------------------------------------
+    # ── Token ──
     @property
     def token(self) -> str:
-        """获取当前 token"""
         return self._token
 
     def set_token(self, token: str):
-        """设置 token，后续所有请求自动携带 Authorization 头"""
         self._token = token
         self.session.headers.update({"Authorization": f"Bearer {token}"})
-        logger.info(" Token 已设置")
 
     def clear_token(self):
-        """清除 token"""
         self._token = None
         self.session.headers.pop("Authorization", None)
 
-    # ---------------------------------------------------------
-    # 通用请求方法
-    # ---------------------------------------------------------
-    def _log_request(self, method: str, url: str, **kwargs):
-        """记录请求日志"""
-        log_data = {
-            "method": method,
-            "url": url,
-            "headers": {k: v for k, v in self.session.headers.items() if k.lower() != "authorization"},
-        }
-        if "params" in kwargs and kwargs["params"]:
-            log_data["params"] = kwargs["params"]
-        if "json" in kwargs and kwargs["json"]:
-            log_data["json"] = kwargs["json"]
-        if "data" in kwargs and kwargs["data"]:
-            log_data["data"] = kwargs["data"]
-        logger.debug(f"请求详情: {json_lib.dumps(log_data, ensure_ascii=False, default=str)}")
-
-    def _log_response(self, res: Response):
-        """记录响应日志，JSON 解析失败时 fallback 到纯文本"""
-        try:
-            body = res.json()
-            body_preview = json_lib.dumps(body, ensure_ascii=False, indent=2)[:500]
-        except (ValueError, TypeError):
-            body_preview = res.text[:500]
-        logger.debug(f"响应 ({res.status_code}): {body_preview}")
-
-    @allure.step("{method} {url}")
-    def request(self, method: str, url: str, **kwargs) -> Response:
+    # ── 请求  等着被调用 ──
+    # 拼接url、token请求头、超时、日志打印、allure报告附件、使用session发送网络请求
+    # 职责：真正和后端建立网络通信，发出HTTP请求，返回原始Response响应对象
+    @allure.step("HTTP 请求")
+    def request(self, **kwargs) -> "Response":
+        """通用请求入口。method/path 必填，其余参数透传给 requests.request()
+        method=  path=  params=  json=  data=  headers=  files=  cookies=  timeout=  auth=
         """
-        通用请求方法
-        - url: 完整 URL 或相对路径（自动拼接 base_url）
-        - 【新增】超时 + 重试 + 异常响应容错
-        """
+        method = kwargs.pop("method", "get").lower()
+        url = kwargs.pop("path", kwargs.pop("url", None))
+        assert url, "request() 缺少 path 或 url"
         if not url.startswith("http"):
             url = f"{self.base_url}{url}"
 
-        # === 【新增】统一超时设置 ===
         kwargs.setdefault("timeout", self.timeout)
 
-        # Attach 请求到 Allure
-        attach_request(method, url, headers=self.session.headers, **kwargs)
-        self._log_request(method, url, **kwargs)
+        excel_headers = kwargs.pop("headers", None)
+        request_headers = dict(self.session.headers)
+        if excel_headers:
+            for k, v in excel_headers.items():
+                if k.lower() != "authorization":
+                    request_headers[k] = v
 
-        try:
-            # === 【优化】带重试的请求 ===
-            res = self.session.request(method, url, **kwargs)
-            self._last_response = res
-            self._log_response(res)
-            attach_response(res)
-            return res
+        #把请求参数嵌入 Allure 测试报告
+        attach_request(method, url, headers=request_headers, **kwargs)
+        logger.debug(f">> {method.upper()} {url}")
 
-        except requests.exceptions.ConnectionError as e:
-            # === 【新增】连接失败容错：记录到 Allure 但不崩溃 ===
-            logger.error(f"连接失败: {method} {url} - {e}")
-            allure.attach(str(e), name=" 连接异常", attachment_type=allure.attachment_type.TEXT)
-            # 返回一个模拟的 503 Response，避免调用方崩
-            mock_res = Response()
-            mock_res.status_code = 503
-            mock_res._content = b'{"code":500,"msg":"Connection refused"}'
-            return mock_res
+        res = self.session.request(method, url, headers=request_headers, **kwargs)
+        res.encoding = "utf-8"
+        logger.debug(f"<< {res.status_code}")
+        #把响应结果嵌入Allure测试报告
+        attach_response(res)
+        return res
+    #作用：调用 request() → 拿到响应 → 立刻执行.json()，把 json 字符串转换成 Python 字典，对外返回字典
+    def _call(self, **kwargs) -> dict:
+        return self.request(**kwargs).json()
 
-        except requests.Timeout as e:
-            logger.error(f"请求超时: {method} {url} - {e}")
-            allure.attach(str(e), name=" 超时异常", attachment_type=allure.attachment_type.TEXT)
-            mock_res = Response()
-            mock_res.status_code = 504
-            mock_res._content = b'{"code":500,"msg":"Timeout"}'
-            return mock_res
+    # ── 通用 CRUD（子类设置 resource 属性即可使用）──
 
-        except requests.RequestException as e:
-            logger.error(f"请求异常: {method} {url} - {e}")
-            allure.attach(str(e), name=" 请求异常", attachment_type=allure.attachment_type.TEXT)
-            raise   # 未知异常往上抛
+    def list(self, params: dict = None) -> dict:
+        return self._call(method="GET", path=f"{self.resource}/list",
+                          params=params or {})
 
-    def get(self, url: str, **kwargs) -> Response:
-        """发送 GET 请求"""
-        return self.request("GET", url, **kwargs)
+    def get(self, id_: int) -> dict:
+        return self._call(method="GET", path=f"{self.resource}/{id_}")
 
-    def post(self, url: str, **kwargs) -> Response:
-        """发送 POST 请求"""
-        return self.request("POST", url, **kwargs)
+    def create(self, data: dict) -> dict:
+        return self._call(method="POST", path=self.resource, json=data)
 
-    def put(self, url: str, **kwargs) -> Response:
-        """发送 PUT 请求"""
-        return self.request("PUT", url, **kwargs)
+    def update(self, data: dict) -> dict:
+        return self._call(method="PUT", path=self.resource, json=data)
 
-    def delete(self, url: str, **kwargs) -> Response:
-        """发送 DELETE 请求"""
-        return self.request("DELETE", url, **kwargs)
+    def delete(self, ids: Union[int, List[int]]) -> dict:
+        """批量删除，兼容单 ID 和多 ID 场景"""
+        if isinstance(ids, int):
+            ids = [ids]
+        return self._call(method="DELETE",
+                          path=f"{self.resource}/{','.join(map(str, ids))}")
+
+    def change_status(self, **kwargs) -> dict:
+        return self._call(method="PUT",
+                          path=f"{self.resource}/changeStatus",
+                          json=kwargs)

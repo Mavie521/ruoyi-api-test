@@ -31,7 +31,7 @@ DURATION=$(($(date +%s)-START_TIME))
 PASSED=$(grep -oP '\d+(?= passed)' "$ALLURE_DIR"/*.txt 2>/dev/null | tail -1 || echo "0")
 TOTAL=$(grep -oP '(?<=Total: )\d+' "$ALLURE_DIR"/*.txt 2>/dev/null | tail -1 || echo "0"); [ "$TOTAL" = "0" ] && TOTAL="$PASSED"
 
-cd "$PROJECT_DIR" && docker compose run --rm allure-reporter 2>/dev/null || true
+cd "$PROJECT_DIR" && docker compose run --rm allure-reporter || echo "[WARN] allure-reporter 报告生成失败"
 
 if [ $EXIT_CODE -ne 0 ]; then bash scripts/notify.sh "failure" "$PASSED" "$TOTAL" "$DURATION" "$MARKER" "${BUILD_NUMBER:-}" "$TYPE"; else bash scripts/notify.sh "success" "$PASSED" "$TOTAL" "$DURATION" "$MARKER" "${BUILD_NUMBER:-}" "$TYPE"; fi
 
