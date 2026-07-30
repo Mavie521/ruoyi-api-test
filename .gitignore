@@ -58,3 +58,4 @@ web_frontend/dist/
 !logs/.gitkeep
 !data/.gitkeep
 !cache/.gitkeep
+docker/ruoyi/jar/
