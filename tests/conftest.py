@@ -87,37 +87,62 @@ def db():
 # ====================================================
 
 @pytest.fixture(scope="session")
-def non_admin_login(admin_login, db):
+def non_admin_role(admin_login, db):
     """
-    普通用户登录 fixture — 用于权限/越权测试
-    - 管理员创建一个测试用户，分配"普通角色"
-    - 用该用户登录，返回带普通 token 的 LoginApi
-    - session 级别，测试结束自动删用户
+    幂等创建通用测试角色（session 级别，仅执行一次）
+    role_key='test_common' 精确查询，不存在则用管理员接口创建
+    """
+    row = db.query_one(
+        "SELECT role_id FROM sys_role WHERE role_key='test_common' AND del_flag='0'"
+    )
+    if row:
+        logger.info(f" 测试角色 test_common 已存在: role_id={row[0]}")
+        return row[0]
 
-    用法:
-        def test_common_user_cannot_create_role(non_admin_login):
-            api = RoleApi()
-            api.set_token(non_admin_login.token)
-            resp = api.create({...})
-            assert resp["code"] == 403  # or 401
+    role_api = RoleApi()
+    role_api.set_token(admin_login.token)
+    data = RoleApi.build_role_data(
+        role_name="通用测试角色",
+        role_key="test_common",
+        role_sort=99,
+        menu_ids=[],
+    )
+    resp = role_api.create(data)
+    assert resp.get("code") == 200, f"创建 test_common 角色失败: {resp}"
+
+    # 回查 role_id
+    new_row = db.query_one(
+        "SELECT role_id FROM sys_role WHERE role_key='test_common'"
+    )
+    assert new_row, "test_common 角色创建后未查到"
+    logger.info(f" 已创建测试角色 test_common: role_id={new_row[0]}")
+    return new_row[0]
+
+
+@pytest.fixture(scope="session")
+def non_admin_login(request, admin_login, non_admin_role):
+    """
+    普通用户登录 fixture
+    - 依赖 non_admin_role（幂等创建 test_common 角色）
+    - 创建测试用户并分配 test_common 角色
+    - 返回已登录的 LoginApi（普通 token）
     """
     suffix = uuid.uuid4().hex[:8]
     username = f"perm_test_{suffix}"
     password = "test123456"
 
-    # 管理员创建用户，分配普通角色 (role_id=2)
     user_api = SystemUserApi()
     user_api.set_token(admin_login.token)
     data = SystemUserApi.build_user_data(
         username=username,
         password=password,
         nick_name=f"权限测试_{suffix}",
-        role_ids=[2],      # 普通角色，非管理员
+        role_ids=[non_admin_role],
     )
     resp = user_api.create(data)
-    logger.info(f" 创建权限测试用户: {username}, code={resp.get('code')}")
+    assert resp.get("code") == 200, f"创建权限测试用户失败: {resp}"
+    logger.info(f" 创建权限测试用户: {username}")
 
-    # 普通用户登录
     login = LoginApi()
     token = login.login(username, password)
     assert token, f"普通用户登录失败: {username}"
@@ -125,15 +150,65 @@ def non_admin_login(admin_login, db):
 
     yield login
 
-    # 清理：删用户
     def cleanup():
         try:
-            db.execute("DELETE FROM sys_user WHERE user_name=%s", (username,))
-            logger.info(f"  清理权限测试用户: {username}")
-        except mysql.connector.Error as e:
-            logger.warning(f"  清理失败: {e}")
+            from utils.db_utils import DbClient
+            c = DbClient()
+            uid_row = c.query_one("SELECT user_id FROM sys_user WHERE user_name=%s", (username,))
+            c.close()
+            if uid_row:
+                ua = SystemUserApi()
+                ua.set_token(admin_login.token)
+                ua.delete([uid_row[0]])
+                logger.info(f"  清理权限测试用户: {username}")
+        except Exception as e:
+            logger.warning(f"  清理权限测试用户失败: {e}")
 
-    cleanup()
+    request.addfinalizer(cleanup)
+
+
+@pytest.fixture
+def non_admin_target_user(request, admin_login):
+    """
+    为越权删除测试准备的第二个测试用户（普通角色，function 级别）
+    """
+    suffix = uuid.uuid4().hex[:8]
+    username = f"perm_target_{suffix}"
+    password = "test123456"
+
+    # 先查 test_common role_id
+    from utils.db_utils import DbClient
+    c = DbClient()
+    row = c.query_one("SELECT role_id FROM sys_role WHERE role_key='test_common'")
+    c.close()
+
+    user_api = SystemUserApi()
+    user_api.set_token(admin_login.token)
+    data = SystemUserApi.build_user_data(
+        username=username,
+        password=password,
+        nick_name=f"删除目标_{suffix}",
+        role_ids=[row[0]] if row else [],
+    )
+    resp = user_api.create(data)
+    assert resp.get("code") == 200, f"创建删除目标用户失败: {resp}"
+
+    yield username
+
+    def cleanup():
+        try:
+            c = DbClient()
+            uid = c.query_one("SELECT user_id FROM sys_user WHERE user_name=%s", (username,))
+            c.close()
+            if uid:
+                ua = SystemUserApi()
+                ua.set_token(admin_login.token)
+                ua.delete([uid[0]])
+                logger.info(f"  清理删除目标用户: {username}")
+        except Exception as e:
+            logger.warning(f"  清理删除目标用户失败: {e}")
+
+    request.addfinalizer(cleanup)
 
 
 # ====================================================

@@ -105,7 +105,7 @@ class TestSecurity:
     @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.security
     @pytest.mark.p0
-    def test_common_user_cannot_escalate(self, non_admin_login):
+    def test_common_user_cannot_escalate(self, non_admin_login, non_admin_target_user):
         """普通角色用户不应能操作角色/用户管理接口"""
         from api import RoleApi, SystemUserApi
 
@@ -115,8 +115,13 @@ class TestSecurity:
         resp = role_api.create({"roleName": "越权角色", "roleKey": "escalate"})
         assert resp.get("code") != 200, f"普通用户不应能创建角色: {resp}"
 
-        # 2. 尝试删除用户（管理员接口）
+        # 2. 尝试删除另一个普通用户（查目标用户的 user_id）
+        from utils.db_utils import DbClient
+        c = DbClient()
+        row = c.query_one("SELECT user_id FROM sys_user WHERE user_name=%s", (non_admin_target_user,))
+        c.close()
+        assert row, f"目标用户不存在: {non_admin_target_user}"
         user_api = SystemUserApi()
         user_api.set_token(non_admin_login.token)
-        resp = user_api.delete([1])
-        assert resp.get("code") != 200, f"普通用户不应能删除用户: {resp}"
+        resp = user_api.delete([row[0]])
+        assert resp.get("code") != 200, f"普通用户不应能删除其他用户: {resp}"
