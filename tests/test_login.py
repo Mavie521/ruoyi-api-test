@@ -64,7 +64,7 @@ class TestLogin:
 
     @allure.story("会话管理")
     @allure.title("禁用后已签发 Token 仍有效（JWT 无状态缺陷）")
-    @allure.severity(allure.severity_level.CRITICAL)
+    @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.p0
     def test_token_rejected_after_user_disabled(self, system_user_api, db):
         """

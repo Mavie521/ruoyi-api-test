@@ -143,7 +143,7 @@ class TestBusinessFlow:
 
     @allure.story("RBAC权限链")
     @allure.title("角色→菜单→路由 权限链验证")
-    @allure.severity(allure.severity_level.CRITICAL)
+    @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.p0
     def test_rbac_permission_chain(self, admin_login, role_api, system_user_api):
         """验证 RBAC 权限模型: 角色有菜单→用户有角色→用户有路由"""
@@ -176,7 +176,7 @@ class TestBusinessFlow:
 
     @allure.story("组织架构")
     @allure.title("部门树→岗位→用户 组织架构验证")
-    @allure.severity(allure.severity_level.CRITICAL)
+    @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.p0
     def test_dept_post_hierarchy(self, dept_api, post_api, role_api):
         """验证组织架构: 部门层级→岗位列表→角色部门树"""

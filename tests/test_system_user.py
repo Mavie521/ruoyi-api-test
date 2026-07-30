@@ -37,7 +37,7 @@ class TestSystemUser:
 
     @allure.story("用户查询")
     @allure.title("获取用户详情 - 管理员")
-    @allure.severity(allure.severity_level.CRITICAL)
+    @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.p0
     def test_get_admin_detail(self, system_user_api):
         resp = system_user_api.get(1)
@@ -48,7 +48,7 @@ class TestSystemUser:
 
     @allure.story("用户新增")
     @allure.title("新增用户 - 正常创建 + 数据库验证")
-    @allure.severity(allure.severity_level.CRITICAL)
+    @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.p0
     def test_create_user(self, system_user_api, new_real_user_data, db):
         resp = system_user_api.create(new_real_user_data)
@@ -60,7 +60,7 @@ class TestSystemUser:
 
     @allure.story("用户修改")
     @allure.title("修改用户昵称 + 数据库验证")
-    @allure.severity(allure.severity_level.CRITICAL)
+    @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.p0
     def test_update_user(self, system_user_api, new_real_user_data, db):
         resp = system_user_api.create(new_real_user_data)
@@ -80,7 +80,7 @@ class TestSystemUser:
 
     @allure.story("用户删除")
     @allure.title("删除用户 + 数据库验证")
-    @allure.severity(allure.severity_level.CRITICAL)
+    @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.p0
     def test_delete_user(self, system_user_api, new_real_user_data, db):
         system_user_api.create(new_real_user_data)
@@ -97,7 +97,7 @@ class TestSystemUser:
 
     @allure.story("用户查询")
     @allure.title("不存在的用户ID应返回错误")
-    @allure.severity(allure.severity_level.NORMAL)
+    @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.p1
     def test_get_nonexistent_user(self, system_user_api):
         resp = system_user_api.get(999999)
@@ -105,7 +105,7 @@ class TestSystemUser:
 
     @allure.story("用户新增")
     @allure.title("重复用户名创建应失败")
-    @allure.severity(allure.severity_level.NORMAL)
+    @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.p1
     def test_create_duplicate_username(self, system_user_api):
         duplicate_data = system_user_api.build_user_data(
@@ -135,7 +135,7 @@ class TestSystemUser:
 
     @allure.story("用户维护")
     @allure.title("重置用户密码")
-    @allure.severity(allure.severity_level.NORMAL)
+    @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.p1
     def test_reset_password(self, system_user_api, new_real_user_data, db):
         system_user_api.create(new_real_user_data)
@@ -146,7 +146,7 @@ class TestSystemUser:
 
     @allure.story("用户查询")
     @allure.title("获取当前用户个人信息")
-    @allure.severity(allure.severity_level.NORMAL)
+    @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.p1
     def test_get_profile(self, system_user_api):
         """验证 profile() 返回当前登录用户信息"""
