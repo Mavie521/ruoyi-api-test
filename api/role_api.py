@@ -8,19 +8,11 @@ class RoleApi(BaseApi):
 
     # ── 角色特有的方法 ──
 
-    def data_scope(self, role_data: dict) -> dict:
-        return self._call(method="PUT", path=f"{self.resource}/dataScope",
-                          json=role_data)
-
     def option_select(self) -> dict:
         return self._call(method="GET", path=f"{self.resource}/optionselect")
 
     def dept_tree(self, role_id: int) -> dict:
         return self._call(method="GET", path=f"{self.resource}/deptTree/{role_id}")
-
-    def cancel_auth_user(self, user_id: int, role_id: int) -> dict:
-        return self._call(method="PUT", path=f"{self.resource}/authUser/cancel",
-                          json={"userId": user_id, "roleId": role_id})
 
     def allocated_user_list(self, params: dict = None) -> dict:
         return self._call(method="GET",

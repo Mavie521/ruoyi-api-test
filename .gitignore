@@ -59,3 +59,4 @@ web_frontend/dist/
 !data/.gitkeep
 !cache/.gitkeep
 docker/ruoyi/jar/
+cache/*.db-shm\ncache/*.db-wal
