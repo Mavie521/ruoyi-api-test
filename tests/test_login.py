@@ -54,12 +54,13 @@ class TestLogin:
         assert resp.get("code") == 200, f"创建用户失败: {resp}"
 
         uid = _find_user_id(db, username)
-        system_user_api.change_status(userId=uid, status="1")
+        db.execute("UPDATE sys_user SET status='1' WHERE user_id=%s", (uid,))
 
         api = LoginApi()
         token = api.login(username, "123456")
         assert token is None, f"禁用用户不应登录成功: {username}"
 
+        db.execute("UPDATE sys_user SET status='0' WHERE user_id=%s", (uid,))
         system_user_api.delete([uid])
 
     @allure.story("会话管理")

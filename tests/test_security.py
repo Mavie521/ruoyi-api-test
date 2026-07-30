@@ -15,7 +15,7 @@ class TestSecurity:
     """安全测试：SQL注入 / XSS / 越权 / 边界异常"""
 
     @allure.story("SQL 注入")
-    @allure.title("登录接口 SQL 注入 — 多种注入 payload")
+    @allure.title("登录接口 SQL 注入 — 用户名字段注入")
     @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.security
     @pytest.mark.p1
@@ -25,11 +25,27 @@ class TestSecurity:
         "admin' OR 1=1--",
         "admin\" OR \"1\"=\"1",
     ])
-    def test_login_sql_injection(self, payload):
-        """防止 SQL 注入：恶意用户名不应登录成功"""
+    def test_login_sql_injection_username(self, payload):
+        """用户名 SQL 注入不应登录成功"""
         api = LoginApi()
         token = api.login(payload, "admin123")
-        assert token is None, f"SQL 注入 payload 不应成功: {payload}"
+        assert token is None, f"用户名 SQL 注入不应成功: {payload}"
+
+    @allure.story("SQL 注入")
+    @allure.title("登录接口 SQL 注入 — 密码字段注入")
+    @allure.severity(allure.severity_level.CRITICAL)
+    @pytest.mark.security
+    @pytest.mark.p1
+    @pytest.mark.parametrize("payload", [
+        "' OR '1'='1",
+        "' OR 1=1--",
+        "') OR ('1'='1",
+    ])
+    def test_login_sql_injection_password(self, payload):
+        """密码字段 SQL 注入不应登录成功"""
+        api = LoginApi()
+        token = api.login("admin", payload)
+        assert token is None, f"密码 SQL 注入不应成功: {payload}"
 
     @allure.story("XSS")
     @allure.title("角色名 XSS 注入 — 特殊字符/脚本")
