@@ -51,13 +51,11 @@ class TestSecurity:
         # 预期：系统做字符过滤后返回非 500 即可（可能返回 200 或参数校验错误）
         assert resp.get("code") != 500, f"XSS 不应导致 500: {xss_payload}"
 
-    # < 字符测试：当前版本 JAR 已修复，与普通 XSS 测试合并即可
     @allure.story("XSS")
-    @allure.title("角色名含 < 字符 — 不应导致服务端 500")
+    @allure.title("角色名含 < 字符 — 不应导致服务端 500（已修复）")
     @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.security
     @pytest.mark.p1
-    @pytest.mark.xfail(reason="已知服务端缺陷: <B> 等非常规标签触发 JSON parse error 500，<script> 则被正确过滤")
     def test_role_name_xss_crash_bug(self, role_api, new_role_data):
         """< 特殊字符不应导致服务端 500"""
         data = new_role_data.copy()
