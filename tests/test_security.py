@@ -99,3 +99,24 @@ class TestSecurity:
         token = api.login(long_str, long_str)
         # 期望：不会 500 崩溃（可能成功或失败，但不抛异常）
         assert token is None or len(token) > 0
+
+    @allure.story("越权测试")
+    @allure.title("普通用户越权操作 — 不能操作管理员接口")
+    @allure.severity(allure.severity_level.BLOCKER)
+    @pytest.mark.security
+    @pytest.mark.p0
+    def test_common_user_cannot_escalate(self, non_admin_login):
+        """普通角色用户不应能操作角色/用户管理接口"""
+        from api import RoleApi, SystemUserApi
+
+        # 1. 尝试创建角色（管理员接口）
+        role_api = RoleApi()
+        role_api.set_token(non_admin_login.token)
+        resp = role_api.create({"roleName": "越权角色", "roleKey": "escalate"})
+        assert resp.get("code") != 200, f"普通用户不应能创建角色: {resp}"
+
+        # 2. 尝试删除用户（管理员接口）
+        user_api = SystemUserApi()
+        user_api.set_token(non_admin_login.token)
+        resp = user_api.delete([1])
+        assert resp.get("code") != 200, f"普通用户不应能删除用户: {resp}"

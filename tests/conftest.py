@@ -83,6 +83,60 @@ def db():
 
 
 # ====================================================
+# 非管理员登录 fixture（权限测试用）
+# ====================================================
+
+@pytest.fixture(scope="session")
+def non_admin_login(admin_login, db):
+    """
+    普通用户登录 fixture — 用于权限/越权测试
+    - 管理员创建一个测试用户，分配"普通角色"
+    - 用该用户登录，返回带普通 token 的 LoginApi
+    - session 级别，测试结束自动删用户
+
+    用法:
+        def test_common_user_cannot_create_role(non_admin_login):
+            api = RoleApi()
+            api.set_token(non_admin_login.token)
+            resp = api.create({...})
+            assert resp["code"] == 403  # or 401
+    """
+    suffix = uuid.uuid4().hex[:8]
+    username = f"perm_test_{suffix}"
+    password = "test123456"
+
+    # 管理员创建用户，分配普通角色 (role_id=2)
+    user_api = SystemUserApi()
+    user_api.set_token(admin_login.token)
+    data = SystemUserApi.build_user_data(
+        username=username,
+        password=password,
+        nick_name=f"权限测试_{suffix}",
+        role_ids=[2],      # 普通角色，非管理员
+    )
+    resp = user_api.create(data)
+    logger.info(f" 创建权限测试用户: {username}, code={resp.get('code')}")
+
+    # 普通用户登录
+    login = LoginApi()
+    token = login.login(username, password)
+    assert token, f"普通用户登录失败: {username}"
+    logger.info(f" 普通用户登录成功: {username}")
+
+    yield login
+
+    # 清理：删用户
+    def cleanup():
+        try:
+            db.execute("DELETE FROM sys_user WHERE user_name=%s", (username,))
+            logger.info(f"  清理权限测试用户: {username}")
+        except mysql.connector.Error as e:
+            logger.warning(f"  清理失败: {e}")
+
+    cleanup()
+
+
+# ====================================================
 # 测试数据 fixtures
 # ====================================================
 
