@@ -23,7 +23,7 @@ from ..database import clear_case_cache, insert_case
 
 # :: 格式: tests/test_role.py::TestRole::test_list_roles
 COLLECT_LINE = re.compile(
-    r"^(?P<module>tests/.+?\.py)::(?:(?P<class>[^:]+?)::)?(?P<func>test_\w+)(?:\[.+?\])?$"
+    r"^(?P<module>(?:tests|testcases)/.+?\.py)::(?:(?P<class>[^:]+?)::)?(?P<func>test_\w+)(?:\[.+?\])?$"
 )
 
 # 树形格式: <Module test_role.py> / <Class TestRole> / <Function test_list_roles>
@@ -42,7 +42,7 @@ def refresh_case_cache() -> dict:
       3. 清空旧缓存，写入新数据
     """
     cmd = [
-        sys.executable, "-m", "pytest", "tests/",
+        sys.executable, "-m", "pytest", "tests/", "testcases/",
         "--collect-only", "-q", "--no-header",
     ]
 
