@@ -133,21 +133,16 @@ class TestSecurity:
         )
 
     @allure.story("参数篡改越权")
-    @allure.title("参数篡改漏洞 — 普通用户篡改 userId 可修改管理员资料")
+    @allure.title("参数篡改防护 — 普通用户篡改 userId 无法修改他人资料")
     @allure.severity(allure.severity_level.BLOCKER)
     @pytest.mark.security
     @pytest.mark.p0
-    @pytest.mark.xfail(
-        reason=(
-            "已知漏洞：普通用户调用 /system/user/profile 时，"
-            "在请求体中传入管理员的 userId，接口未从 token 上下文获取当前用户，"
-            "而是信任前端传入的 userId，导致普通用户可修改管理员昵称。"
-            "\n修复建议：后端从 SecurityContextHolder/JWT Token 中提取当前登录用户 ID，"
-            "忽略前端传参中的 userId 字段。"
-        )
-    )
     def test_param_tampering_cannot_update_others(self, non_admin_login, admin_login):
-        """普通用户修改资料时在 body 中篡改 userId，系统应忽略或拒绝"""
+        """
+        普通用户修改资料时在 body 中传入管理员的 userId，
+        系统应从 Token 上下文提取当前用户 ID，忽略前端传参。
+        （原为 xfail 漏洞，现已修复：接口正确从 Token 获取用户身份）
+        """
         from api import BaseApi
 
         admin_api = BaseApi()
