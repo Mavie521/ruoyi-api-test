@@ -89,8 +89,10 @@ class TestLogin:
         uid = _find_user_id(db, username)
 
         try:
-            # ① 通过通用编辑接口禁用账号（若依无独立用户 changeStatus 接口）
-            system_user_api.update({"userId": uid, "status": "1"})
+            # ① 通过 SQL 禁用账号
+            #    若依无独立用户 changeStatus 接口；update 接口要求完整对象，
+            #    部分字段更新不可靠，测试阶段直接操作 DB 保证状态可控
+            db.execute("UPDATE sys_user SET status='1' WHERE user_id=%s", (uid,))
 
             # ② 数据库校验：确认禁用生效
             row = db.query_one(
@@ -111,6 +113,6 @@ class TestLogin:
                 "修复建议：引入 Redis Token 黑名单 + 网关层拦截"
             )
         finally:
-            # ⑤ 恢复账号状态为正常（保证数据干净）
-            system_user_api.update({"userId": uid, "status": "0"})
+            # ⑤ 恢复状态 + 软删除（保证数据干净）
+            db.execute("UPDATE sys_user SET status='0' WHERE user_id=%s", (uid,))
             system_user_api.delete([uid])
