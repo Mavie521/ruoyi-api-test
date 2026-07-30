@@ -13,7 +13,10 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: ry-vue
       MYSQL_CHARACTER_SET_SERVER: utf8mb4
-      MYSQL_COLLATION_SERVER: utf8mb4_general_ci  
+      MYSQL_COLLATION_SERVER: utf8mb4_general_ci
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
     ports:
       - "3307:3306"
     volumes:
