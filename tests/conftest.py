@@ -16,30 +16,55 @@ from api import LoginApi, RoleApi, SystemUserApi, DeptApi, PostApi
 
 # ── 内部工具 ───────────────────────────────────────
 
-def _query_role_id(role_key: str):
-    """按 role_key 查询角色 ID（独立连接，清理用）"""
+def _query_role_id(db, role_key: str):
+    """按 role_key 查询角色 ID（复用 db fixture 连接，避免重复建连）"""
     try:
-        c = DbClient()
-        row = c.query_one("SELECT role_id FROM sys_role WHERE role_key=%s", (role_key,))
-        c.close()
+        row = db.query_one("SELECT role_id FROM sys_role WHERE role_key=%s", (role_key,))
         return row["role_id"] if row else None
     except Exception:
         return None
 
 
-def _cleanup_test_user(admin_token: str, username: str):
-    """通过 API 软删除测试用户（不触发外键约束）"""
+def _cleanup_test_user(db, system_user_api, username: str):
+    """通过 API 软删除测试用户（复用 db + system_user_api fixture）"""
     try:
-        c = DbClient()
-        uid_row = c.query_one("SELECT user_id FROM sys_user WHERE user_name=%s", (username,))
-        c.close()
+        uid_row = db.query_one("SELECT user_id FROM sys_user WHERE user_name=%s", (username,))
         if uid_row:
-            ua = SystemUserApi()
-            ua.set_token(admin_token)
-            ua.delete([uid_row[0]])
+            system_user_api.delete([uid_row[0]])
             logger.info(f"  清理测试用户: {username}")
     except Exception as e:
         logger.warning(f"  清理测试用户失败: {e}")
+
+
+def _create_normal_user(non_admin_role, system_user_api):
+    """创建普通权限测试用户 + 登录，返回 (LoginApi, username)
+
+    抽离公共逻辑供 non_admin_login fixture 调用，消除冗余。
+    未来如需 function 级别的隔离版本，只需加一行:
+        @pytest.fixture(scope="function")
+        def isolated_non_admin_login(...): ...
+    内部调用同一个 _create_normal_user 即可，业务代码零重复。
+    """
+    suffix = uuid.uuid4().hex[:8]
+    username = f"perm_test_{suffix}"
+    password = "test123456"
+
+    data = SystemUserApi.build_user_data(
+        username=username,
+        password=password,
+        nick_name=f"权限测试_{suffix}",
+        role_ids=[non_admin_role],
+    )
+    resp = system_user_api.create(data)
+    assert resp.get("code") == 200, f"创建权限测试用户失败: {resp}"
+    logger.info(f" 创建权限测试用户: {username}")
+
+    login = LoginApi()
+    token = login.login(username, password)
+    assert token, f"普通用户登录失败: {username}"
+    logger.info(f" 普通用户登录成功: {username}")
+
+    return login, username
 
 
 # ── fixtures ───────────────────────────────────────
@@ -175,32 +200,24 @@ def non_admin_role(role_api, db):
 
 
 @pytest.fixture(scope="session")
-def non_admin_login(request, admin_login, non_admin_role, system_user_api):
-    """普通用户登录 fixture，返回带普通 token 的 LoginApi"""
-    suffix = uuid.uuid4().hex[:8]
-    username = f"perm_test_{suffix}"
-    password = "test123456"
+def non_admin_login(request, non_admin_role, system_user_api, db):
+    """普通用户登录 fixture（session 共享），返回带普通 token 的 LoginApi
 
-    data = SystemUserApi.build_user_data(
-        username=username, password=password,
-        nick_name=f"权限测试_{suffix}",
-        role_ids=[non_admin_role],
-    )
-    resp = system_user_api.create(data)
-    assert resp.get("code") == 200, f"创建权限测试用户失败: {resp}"
-    logger.info(f" 创建权限测试用户: {username}")
-
-    # role_api / system_user_api复用是因为它们用同一个admintoken，可以共用。
-    # 但non_admin_login需要的是另一个用户的token，必须新建LoginApi()调用login(username, password)拿到不同单位token
-    login = LoginApi()
-    token = login.login(username, password)
-    assert token, f"普通用户登录失败: {username}"
-    logger.info(f" 普通用户登录成功: {username}")
+    注意：3 条安全用例均为只读操作（拿 token 访问别人资源），
+    不会修改自身属性，所以 session 共享是安全的。
+    如需会修改自身的用例（改昵称/禁用/改角色），加 function 级别版本:
+        @pytest.fixture(scope="function")
+        def isolated_non_admin_login(request, admin_login, non_admin_role, system_user_api, db):
+            login, username = _create_normal_user(non_admin_role, system_user_api)
+            yield login
+            _cleanup_test_user(db, system_user_api, username)
+    """
+    login, username = _create_normal_user(non_admin_role, system_user_api)
 
     yield login
 
     def cleanup():
-        _cleanup_test_user(admin_login.token, username)
+        _cleanup_test_user(db, system_user_api, username)
     request.addfinalizer(cleanup)
 
 
@@ -210,7 +227,7 @@ def non_admin_login(request, admin_login, non_admin_role, system_user_api):
 
 
 @pytest.fixture
-def new_real_user_data(request, admin_login) -> dict:
+def new_real_user_data(request, db, system_user_api) -> dict:
     """生成用户数据 + API 软删除清理，避免 SQL DELETE 外键约束"""
     suffix = uuid.uuid4().hex[:8]
     username = f"test_real_{suffix}"
@@ -225,12 +242,12 @@ def new_real_user_data(request, admin_login) -> dict:
     yield data
 
     def cleanup():
-        _cleanup_test_user(admin_login.token, username)
+        _cleanup_test_user(db, system_user_api, username)
     request.addfinalizer(cleanup)
 
 
 @pytest.fixture
-def new_role_data(request, admin_login) -> dict:
+def new_role_data(request, db, role_api) -> dict:
     """生成角色数据 + API 软删除清理"""
     suffix = uuid.uuid4().hex[:8]
     role_key = f"test_role_{suffix}"
@@ -245,11 +262,9 @@ def new_role_data(request, admin_login) -> dict:
 
     def cleanup():
         try:
-            uid_row = _query_role_id(role_key)
-            if uid_row:
-                ra = RoleApi()
-                ra.set_token(admin_login.token)
-                ra.delete([uid_row])
+            uid = _query_role_id(db, role_key)
+            if uid:
+                role_api.delete([uid])
                 logger.info(f"  清理测试角色: {role_key}")
         except Exception as e:
             logger.warning(f"  清理角色失败: {e}")
