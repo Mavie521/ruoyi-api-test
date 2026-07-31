@@ -398,7 +398,7 @@ def do_assert(case: dict, resp):
 
   1. docker compose up -d
   2. wait_for_api.sh（POST /login 检测 Token）
-  3. pytest --reruns 1（temp-allure 原子写入）
+  3. pytest（HTTP 层已用 urllib3 Retry 处理 5xx 瞬时故障）
   4. 收集测试结果
   5. allure-reporter 生成 HTML 报告
   6. 钉钉通知
@@ -441,7 +441,7 @@ def step2_wait_for_api(max_retries=40, sleep=5):
     raise TimeoutError(f"等待超时 {max_retries * sleep}s")
 
 
-def step3_run_pytest(marker="p0", reruns=1):
+def step3_run_pytest(marker="p0"):
     """
     执行测试 + temp-allure 原子写入。
 
@@ -455,7 +455,7 @@ def step3_run_pytest(marker="p0", reruns=1):
         "docker", "compose", "--profile", "test", "run", "--rm",
         "test-runner", "sh", "-c",
         f"rm -rf /app/reports/temp-allure && "
-        f"pytest tests/ -m {marker} --alluredir=/app/reports/temp-allure -v --reruns {reruns} && "
+        f"pytest tests/ -m {marker} --alluredir=/app/reports/temp-allure -v && "
         f"rm -rf /app/reports/allure-results && "
         f"mv /app/reports/temp-allure /app/reports/allure-results"
     ], check=False)
@@ -504,7 +504,7 @@ def step7_rebuild_nginx():
 
   Q2: 接口自动化最怕什么？
   A:  最怕"接口返回 200，但数据库没写"。
-      所以加数据库断言，双维度验证。再怕偶发失败，所以加 --reruns 1。
+      所以加数据库断言，双维度验证。HTTP 层用 urllib3 Retry 自动处理 5xx 瞬时故障。
 
   Q3: 为什么不用 SQLAlchemy？
   A:  项目只用 MySQL，ORM 的好处（多数据库切换）用不上。
@@ -524,7 +524,7 @@ def step7_rebuild_nginx():
       --force-recreate 重建后恢复。这是 Docker bridge 网络的已知问题。
 
   Q6: 怎么保证测试的稳定性？
-  A:  1) --reruns 1 消除偶发失败
+  A:  1) urllib3 Retry（HTTP 层对 500/502/503/504 自动重试 2 次）
       2) 双维度断言避免漏测
       3) temp-allure 原子写入避免半成品报告
       4) 连接池避免并发爆 MySQL

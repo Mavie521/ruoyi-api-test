@@ -52,7 +52,7 @@ P2 辅助:  ██████                      12% (5条)
 | Jenkins 手动构建 | ✅ | 支持 p0/p1/p2/all + fast/clean 参数 |
 | 定时全量回归（凌晨2点） | ✅ | Jenkins Cron: `H 8 * * *` |
 | P0 失败自动阻断 | ✅ | `--maxfail=10` 配置 |
-| 失败重试机制 | ✅ | `--reruns 1`，网络波动容错 |
+| HTTP 层重试 | ✅ | urllib3 Retry（500/502/503/504 自动重试 2 次） |
 | 等待后端就绪 | ✅ | `wait_for_api.sh` POST 验证 token (200s 超时) |
 | Allure 报告自动生成 | ✅ | Jenkins 内嵌 + Nginx 独立服务 |
 | 钉钉通知 | ✅ | 成功/失败自动推送 |

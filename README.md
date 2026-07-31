@@ -194,7 +194,7 @@ graph LR
     subgraph Pipeline["Jenkins Pipeline ~90s"]
         Deploy["部署<br/>docker compose up -d"]
         Wait["等待就绪<br/>POST /login ×40"]
-        Test["测试<br/>pytest --reruns 1"]
+        Test["测试<br/>pytest"]
         Report["报告<br/>Allure generate"]
     end
 
@@ -215,7 +215,7 @@ graph LR
 ```mermaid
 graph LR
     S1["① compose up"] --> S2["② wait_for_api"]
-    S2 --> S3["③ pytest --reruns 1"]
+    S2 --> S3["③ pytest"]
     S3 --> S4["④ 收集结果"]
     S4 --> S5["⑤ allure generate"]
     S5 --> S6["⑥ 钉钉通知"]
@@ -343,7 +343,6 @@ ry-network (bridge)
 | Requests | HTTP 客户端（Session 连接池复用） |
 | allure-pytest | 动态报告，失败自动 attach |
 | mysql-connector-python | 数据库连接池（10 连接复用） |
-| pytest-rerunfailures | 失败用例自动重试 |
 | pytest-xdist | 多进程并行执行 |
 | Locust | 性能压测（50/100 并发） |
 | Docker Compose | 8 容器编排 |

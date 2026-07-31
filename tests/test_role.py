@@ -214,3 +214,49 @@ class TestRole:
         with allure.step("查询已分配用户列表"):
             allocated = role_api.allocated_user_list({"roleId": role_id})
             assert_jsonpath_exact(allocated, "$.code", 200)
+
+    # ---------------------------------------------------------
+    # P1 · 幂等性
+    # ---------------------------------------------------------
+    @allure.story("接口幂等")
+    @allure.title("POST 非幂等 — 重复创建同 roleKey 不应返回 500，且不产生脏数据")
+    @allure.severity(allure.severity_level.CRITICAL)
+    @pytest.mark.p1
+    @pytest.mark.xfail(
+        reason="若依已知缺陷：重复创建返回 500 而非 4xx 业务错误码。DB 唯一索引兜底，无脏数据。"
+    )
+    def test_create_role_idempotent(self, role_api, new_role_data, db):
+        """幂等性验证：同一个 roleKey 创建两次，第二次应返回明确业务错误，数据库无重复记录
+
+        企业场景：用户双击提交、网关超时重试，服务端不可崩溃或产生脏数据。
+        若依通过 role_key 唯一索引兜底，本用例验证防御层有效。
+
+        当前状态（xfail）：若依返回 code=500 + msg="角色名称已存在"。
+        虽然 DB 层面唯一索引防住了脏数据，但 HTTP 层应返回 4xx 业务错误码而非 500。
+        面试可讲：'我通过测试发现了若依的幂等返回码不规范的缺陷'。
+        """
+        with allure.step("1. 首次创建角色"):
+            resp1 = role_api.create(new_role_data)
+            assert resp1.get("code") == 200, f"首次创建应成功: {resp1}"
+
+        with allure.step("2. 重复创建同一 roleKey"):
+            resp2 = role_api.create(new_role_data)
+
+        with allure.step("3. 验证不崩 500，返回明确业务错误"):
+            assert resp2.get("code") != 500, (
+                f"❌ 幂等缺陷！重复创建同 roleKey 不应返回 500\n"
+                f"  响应: {resp2}\n"
+                f"  预期: 业务错误码（如 4xx），实际: 500"
+            )
+
+        with allure.step("4. 数据库验证无重复脏数据"):
+            count = db.query(
+                "SELECT COUNT(*) AS cnt FROM sys_role "
+                "WHERE role_key=%s AND del_flag='0'",
+                (new_role_data["roleKey"],),
+            )
+            actual = count[0]["cnt"] if count else 0
+            assert actual == 1, (
+                f"❌ 幂等缺陷！同 role_key 产生了 {actual} 条记录（预期 1 条）\n"
+                f"  role_key: {new_role_data['roleKey']}"
+            )
