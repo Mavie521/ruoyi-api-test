@@ -1,21 +1,26 @@
 """
 断言工具 —— 全部断言逻辑统一入口
 
-包含三大类断言（Allure 差异化装饰）:
-  == 接口响应字段断言 ==
-  1. assert_jsonpath_exact()   — 底层核心，@allure.step 装饰
-  2. do_assert()               — Excel 驱动上层封装，@allure.step 装饰（强制执行）
+快速索引（按使用场景查找）:
+┌─────────────────────────────────────────────────────────────────────┐
+│ 场景                          │ 函数                               │
+├─────────────────────────────────────────────────────────────────────┤
+│ Excel 驱动：校验接口响应字段   │ do_assert(case, res)               │
+│ Excel 驱动：校验数据库落盘     │ do_db_assert(case)                 │
+│ Excel 驱动：校验二进制响应     │ do_binary_assert(case, res)        │
+│ 代码测试：断言 JSONPath 字段   │ assert_jsonpath_exact(resp, $, v)  │
+│ 代码测试：断言 DB 值相等       │ assert_db_value(db, sql, expected) │
+│ 代码测试：断言 DB 记录存在     │ assert_db_exists(db, sql)          │
+│ 代码测试：断言 DB 记录不存在   │ assert_db_not_exists(db, sql)      │
+│ 二进制：断言 Content-Type      │ assert_content_type(resp, type)    │
+│ 二进制：断言文件大小           │ assert_content_length(resp, min)   │
+│ 二进制：断言 SHA-256           │ assert_content_sha256(resp, hash)  │
+└─────────────────────────────────────────────────────────────────────┘
 
-  == 数据库校验 ==
-  3. do_db_assert()            — Excel 驱动专用，局部 with allure.step()（可选执行）
-  4. assert_db_value()         — 代码测试用，断言字段值相等
-  5. assert_db_exists()        — 代码测试用，断言记录存在
-  6. assert_db_not_exists()    — 代码测试用，断言记录不存在
-
-不允许:
-  - 全文模糊匹配（已彻底移除）
-  - 自定义 validator 回调
-  - 无 check 字段的断言执行
+设计约束:
+  - 禁止全文模糊匹配（已移除）
+  - 禁止自定义 validator 回调
+  - Excel 驱动用例 check 字段为空时拒绝执行
 """
 import json
 import allure
@@ -27,17 +32,18 @@ from utils.db_utils import DbClient
 from utils.allure_utils import attach_response
 
 
-# ── 类型转换 ─────────────────────────────────────────
-
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                        内部工具（非对外接口）                            ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
 
 def _parse_expected(value):
-    """将预期值转为 Python 类型（支持 int / bool / dict / list / None）
+    """将预期值字符串转为 Python 类型（int / bool / dict / list / None）
 
     举例:
-      "200"       → 200 (int)
-      "true"      → True (bool)
-      "null"      → None
-      "操作成功"   → "操作成功" (str)   ← JSON 解析失败原样返回
+      "200"     → 200 (int)
+      "true"    → True (bool)
+      "null"    → None
+      "操作成功" → "操作成功" (str) — JSON 解析失败则原样返回
     """
     if value is None or isinstance(value, (int, float, bool)):
         return value
@@ -47,24 +53,20 @@ def _parse_expected(value):
         return value
 
 
-# ── 辅助 ─────────────────────────────────────────────
-
-
 def _fmt(body: dict) -> str:
-    """格式化响应体（截断过长的内容）"""
+    """格式化响应体，超过 800 字符截断（避免 Allure 报告撑爆）"""
     text = json.dumps(body, ensure_ascii=False, indent=2)
     return text[:800] + "..." if len(text) > 800 else text
 
 
-# ===================================================================
-# 接口响应字段断言（强制执行，@allure.step 装饰整个函数）
-# ===================================================================
-
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                     一、接口响应字段断言                                 ║
+# ║           assert_jsonpath_exact → 底层核心  |  do_assert → Excel 封装   ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
 
 @allure.step("接口响应字段断言")
 def assert_jsonpath_exact(resp, check: str, expected):
-    """
-    JSONPath 精准字段等值断言（最底层核心函数）
+    """JSONPath 精准字段等值断言 —— 底层核心，所有响应断言最终都调它
 
     参数:
         resp:     requests.Response 对象（或 dict）
@@ -75,7 +77,7 @@ def assert_jsonpath_exact(resp, check: str, expected):
         ValueError:     check 为空 → 用例格式异常
         AssertionError: JSONPath 无匹配 / 值不相等
     """
-    # ── 前置校验 ──
+    # ── 1. 前置校验 ──
     if not check or not isinstance(check, str):
         logger.error("用例格式错误: check 字段为空或非字符串")
         raise ValueError(
@@ -88,7 +90,7 @@ def assert_jsonpath_exact(resp, check: str, expected):
 
     body = resp.json() if isinstance(resp, requests.Response) else resp
 
-    # ── JSONPath 提取 ──
+    # ── 2. JSONPath 提取 ──
     matches = jsonpath.jsonpath(body, check)
 
     if matches is False:
@@ -102,7 +104,7 @@ def assert_jsonpath_exact(resp, check: str, expected):
             f"\n  响应体:\n{_fmt(body)}"
         )
 
-    # ── 等值断言（自动类型转换） ──
+    # ── 3. 等值断言（自动类型转换） ──
     actual = matches[0] if isinstance(matches, list) else matches
     expected_typed = _parse_expected(expected)
 
@@ -126,15 +128,10 @@ def assert_jsonpath_exact(resp, check: str, expected):
 
 @allure.step("接口响应字段断言")
 def do_assert(case: dict, res):
-    """
-    Excel 驱动上层封装 —— 从 case 提取 check + expected 后调用 assert_jsonpath_exact
+    """Excel 驱动入口 —— 从用例字典提取 check + expected，调用上面的核心断言
 
-    触发条件: 所有用例（强制）
-    字段依赖: check（JSONPath 表达式）+ expected（预期值），缺一不可
-    异常分层:
-      - check 为空  → logger.error + ValueError
-      - expected 为空 → logger.error + ValueError
-      - 断言不匹配   → logger.warning + AssertionError
+    触发条件: 所有用例强制执行
+    字段依赖: check（JSONPath）+ expected（预期值），缺一不可
     """
     check = case.get("check")
     expected = case.get("expected")
@@ -160,10 +157,10 @@ def do_assert(case: dict, res):
     assert_jsonpath_exact(res, check, expected)
 
 
-# ===================================================================
-# 二进制响应断言（文件下载 / 图片导出等场景）
-# ===================================================================
-
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                     二、二进制响应断言（文件下载 / 图片导出）           ║
+# ║         assert_content_type / length / sha256  →  do_binary_assert      ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
 
 @allure.step("二进制响应断言: Content-Type")
 def assert_content_type(resp, expected: str):
@@ -204,10 +201,9 @@ def assert_content_sha256(resp, expected_sha256: str):
 
 @allure.step("二进制响应断言")
 def do_binary_assert(case: dict, res):
-    """
-    Excel 驱动二进制断言入口 —— 从 case 提取字段后调用对应底层断言
+    """Excel 驱动二进制断言入口 —— 从 case 提取字段后分发到底层断言
 
-    触发条件: response_type == "binary" 时执行
+    触发条件: response_type == "binary"
     字段依赖（均为可选，至少填一个）:
       - expected_content_type      → assert_content_type()
       - expected_content_min_bytes → assert_content_length()
@@ -229,21 +225,20 @@ def do_binary_assert(case: dict, res):
         assert_content_sha256(res, str(sha256))
 
 
-# ===================================================================
-# 数据库校验（可选执行，局部 with allure.step()）
-# ===================================================================
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                     三、数据库校验                                      ║
+# ║   do_db_assert → Excel 驱动   |   assert_db_xxx → 代码测试用            ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
 
+# ── 3.1 Excel 驱动 ─────────────────────────────────────────────────────────
 
 def do_db_assert(case: dict):
-    """
-    数据库落盘校验
+    """Excel 驱动：数据库落盘校验
 
-    触发条件: sql_check 与 sql_expected 同时非空时执行，任一空白跳过
-    字段依赖: sql_check（查询 SQL）+ sql_expected（预期值）
-    Allure:   局部 with allure.step()，仅在代码真实执行时显示步骤
+    触发条件: sql_check 与 sql_expected 同时非空，任一空白则跳过
     异常分层:
-      - 查询无结果 / 值不匹配 → logger.warning + AssertionError
-      - SQL 执行异常          → logger.error + RuntimeError
+      - 查询无结果 / 值不匹配 → AssertionError
+      - SQL 执行异常          → RuntimeError
     """
     sql = case.get("sql_check")
     expected = case.get("sql_expected")
@@ -292,22 +287,18 @@ def do_db_assert(case: dict):
             db.close()
 
 
-# ===================================================================
-# 数据库断言（代码测试用，独立函数，接受 DbClient 实例）
-# ===================================================================
-
+# ── 3.2 代码测试用（接受 DbClient 实例，由 fixture 注入）──────────────────
 
 @allure.step("数据库断言: 值相等")
 def assert_db_value(db, sql: str, expected, params: tuple = None, column: str = None):
-    """
-    断言数据库中的某个字段值等于预期
+    """断言数据库字段值等于预期
 
     参数:
-        db:       DbClient 实例（来自 fixture）
-        sql:      查询语句（使用 %s 占位符）
+        db:       DbClient 实例（来自 db fixture）
+        sql:      SELECT 语句，使用 %s 占位符
         expected: 预期值
         params:   SQL 参数元组
-        column:   指定字段名（不指定则取第一个字段）
+        column:   指定字段名，不指定则取结果集第一个字段
     """
     result = db.query_one(sql, params)
     assert result is not None, \
@@ -333,7 +324,7 @@ def assert_db_value(db, sql: str, expected, params: tuple = None, column: str = 
 
 @allure.step("数据库断言: 记录存在")
 def assert_db_exists(db, sql: str, params: tuple = None):
-    """断言查询结果至少有一条记录"""
+    """断言查询结果至少有一条记录（用于验证创建成功）"""
     rows = db.query(sql, params)
     assert len(rows) >= 1, \
         f" 数据库断言失败: 期望记录存在，但未查到\n  SQL: {sql}  params: {params}"
