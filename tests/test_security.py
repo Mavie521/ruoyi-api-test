@@ -7,6 +7,7 @@ import allure
 import pytest
 from api import BaseApi, LoginApi
 from utils.assertions import assert_jsonpath_exact
+from utils.logger import logger
 
 
 @allure.epic("若依接口测试")
@@ -223,10 +224,17 @@ class TestSecurity:
         with allure.step("以普通用户身份尝试创建角色"):
             resp = non_admin_login.request(
                 method="POST", path="/system/role",
-                json={"roleName": "越权角色", "roleKey": "escalate"},
+                json={"roleName": "越权角色", "roleKey": "escalate", "roleSort": 1},
             ).json()
-        with allure.step("验证越权操作被拒绝"):
-            assert resp.get("code") != 200, (
+
+        with allure.step("验证越权操作被拒绝（精确断言 403，500=测试缺陷）"):
+            code = resp.get("code")
+            if code == 500:
+                raise AssertionError(
+                    f"❌ 服务端崩溃（500），无法判断越权防护是否生效\n"
+                    f"  响应: {resp}"
+                )
+            assert code != 200, (
                 f"❌ 垂直越权漏洞！普通用户成功创建了角色\n"
                 f"  响应: {resp}"
             )
@@ -276,7 +284,7 @@ class TestSecurity:
         防御性设计: 如果后端回归导致昵称被意外修改，
         finally 块自动恢复原始值，避免污染 admin_login fixture。
         """
-        # Step 1: 获取管理员原始信息（直接复用 admin_login fixture）
+        # Step 1: 获取管理员原始信息
         with allure.step("1. 获取管理员当前昵称和 userId"):
             admin_orig = admin_login.get_info()
             admin_nick = admin_orig.get("user", {}).get("nickName", "")
@@ -297,28 +305,30 @@ class TestSecurity:
                 )
 
             # Step 3: 验证管理员资料未被污染
+            # 注意：攻击者自身的昵称被修改是预期行为——profile 接口
+            # 从 Token 取用户身份，忽略前端传参 userId，只修改登录用户自己。
+            # 这是正确的防护：你能改自己，但不能改别人。
             with allure.step("3. 验证管理员昵称未被篡改"):
                 admin_after = admin_login.get_info()
-                actual_nick = admin_after.get("user", {}).get("nickName", "")
-                assert actual_nick == admin_nick, (
+                actual_admin = admin_after.get("user", {}).get("nickName", "")
+                assert actual_admin == admin_nick, (
                     f"❌ 参数篡改漏洞！管理员的昵称被普通用户通过篡改 userId 修改了。\n"
                     f"  管理员原昵称: {admin_nick}\n"
-                    f"  管理员现昵称: {actual_nick}\n"
+                    f"  管理员现昵称: {actual_admin}\n"
                     f"  攻击方式: 普通用户调用 /system/user/profile，"
                     f"body 中传入 userId={admin_id}\n"
-                    f"  修复建议: 接口应从 Token 上下文获取当前用户 ID，"
-                    f"忽略前端传入的 userId 参数。"
+                    f"  结论: 接口正确从 Token 提取身份，防住了跨用户篡改"
                 )
         finally:
             # 防御性恢复：如果漏洞回归导致管理员昵称被篡改，自动还原
-            current = admin_login.get_info()
-            current_nick = current.get("user", {}).get("nickName", "")
-            if current_nick != admin_nick:
+            current_admin = admin_login.get_info()
+            current_admin_nick = current_admin.get("user", {}).get("nickName", "")
+            if current_admin_nick != admin_nick:
                 admin_login.request(
                     method="PUT", path="/system/user/profile",
                     json={"nickName": admin_nick},
                 )
                 logger.warning(
-                    f"⚠ 检测到参数篡改漏洞！已自动恢复管理员昵称: "
-                    f"{current_nick} → {admin_nick}"
+                    f"⚠ 参数篡改漏洞！已恢复管理员昵称: "
+                    f"{current_admin_nick} → {admin_nick}"
                 )

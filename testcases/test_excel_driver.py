@@ -7,6 +7,9 @@ Excel 数据驱动测试执行器
 变量传递：用例间通过 excel_vars 共享变量（模块级 fixture）。
   例：用例1 登录后提取 TOKEN → excel_vars["TOKEN"] → 用例2 的 {{TOKEN}} 被渲染
 
+变量依赖保护：_check_vars() 在执行前扫描 {{变量}}，上游失败导致变量缺失时
+  pytest.skip() 而非报错，报告显示 1 条红 + N 条黄，一眼看出根因。
+
 限制：
   - 仅支持单进程顺序执行（Excel 用例有变量依赖，不适合并行）
   - 并发场景请用 tests/ 下的代码用例
@@ -16,6 +19,8 @@ Excel 数据驱动测试执行器
   pytest testcases/ -v -m p0         # P0 级别
 """
 import time
+import json
+import re
 import allure
 import pytest
 from utils.logger import logger
@@ -92,6 +97,17 @@ def _build_params():
 
 
 # ═══════════════════════════════════════════════════════════════
+# 变量依赖检查（上游失败 → 下游跳过，避免雪崩）
+# ═══════════════════════════════════════════════════════════════
+
+def _check_vars(case: dict, pool: dict) -> list:
+    """扫描用例中的 {{变量}}，返回缺失列表。无依赖返回空列表。"""
+    case_str = json.dumps(case, ensure_ascii=False)
+    refs = set(re.findall(r'\{\{(\w+)\}\}', case_str))
+    return [v for v in refs if v not in pool]
+
+
+# ═══════════════════════════════════════════════════════════════
 # 执行器
 # ═══════════════════════════════════════════════════════════════
 
@@ -101,13 +117,14 @@ class TestExcelDataLayer:
     @pytest.mark.parametrize("case", _build_params())
     def test_excel_case(self, case, excel_api, excel_vars):
         """每条 Excel 用例的执行入口"""
-        #allure.dynamic.xxx动态API（你框架使用方案）在用例运行期间实时赋值！
-        # 数据来源就是当前这条用例的字典case（Excel一行数据）。
-        # 运行时读取Excel里的feature、story、id、title，自动渲染到报告。
         allure_init(case)
-        # Jinja2是模板工具，核心功能是扫描字符串中的{{变量名}}占位符，根据传入的变量字典进行文本替换。但是它只能处理字符串，无法直接解析
-        # Python字典。所以我的render_case函数先用json.dumps把整个用例字典转字符串，交给Jinja渲染填充变量；渲染完成后再通过json.loads转回字典，给后续接口调用使用。
 
+        # 上游用例失败导致变量缺失 → skip，不报错
+        missing = _check_vars(case, excel_vars)
+        if missing:
+            pytest.skip(f"上游用例失败，缺少变量: {missing}")
+
+        # Jinja2 渲染 {{变量}} → Python dict
         rendered = render_case(case, excel_vars)
 
         method = rendered.get("method", "get").lower()

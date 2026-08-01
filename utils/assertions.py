@@ -128,33 +128,29 @@ def assert_jsonpath_exact(resp, check: str, expected):
 
 @allure.step("接口响应字段断言")
 def do_assert(case: dict, res):
-    """Excel 驱动入口 —— 从用例字典提取 check + expected，调用上面的核心断言
+    """Excel 驱动入口 —— 从 expected_json 列读取多字段断言规则
 
-    触发条件: 所有用例强制执行
-    字段依赖: check（JSONPath）+ expected（预期值），缺一不可
+    格式: {"$.code": 200, "$.msg": "操作成功", "$.data": []}
+    支持单字段（{"$.code": 200}）和多字段断言，统一走循环。
+    列空白则跳过（不需要断言的用例）。
     """
-    check = case.get("check")
-    expected = case.get("expected")
+    raw = case.get("expected_json")
+    if not raw:
+        return
 
-    if not check:
-        logger.error("用例格式异常: check 字段为空")
-        raise ValueError(
-            "\n  ==================== 用例格式异常 ===================="
-            "\n  Excel 用例的 check 列禁止为空"
-            "\n  请填写 JSONPath 表达式，示例: $.code   $.data.roleId"
-            "\n  ====================================================="
-        )
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except json.JSONDecodeError as e:
+            logger.error(f"expected_json 格式错误: {raw[:100]}")
+            raise ValueError(
+                f"\n  [Excel 格式错误] expected_json 列非合法 JSON"
+                f"\n  内容: {raw[:200]}"
+                f"\n  错误: {e}"
+            ) from e
 
-    if expected is None:
-        logger.error("用例格式异常: expected 字段为空")
-        raise ValueError(
-            "\n  ==================== 用例格式异常 ===================="
-            "\n  Excel 用例的 expected 列禁止为空"
-            "\n  请填写该 JSONPath 字段的预期值"
-            "\n  ====================================================="
-        )
-
-    assert_jsonpath_exact(res, check, expected)
+    for path, expected in raw.items():
+        assert_jsonpath_exact(res, path, expected)
 
 
 # ╔══════════════════════════════════════════════════════════════════════════╗
