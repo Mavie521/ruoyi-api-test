@@ -37,20 +37,23 @@ from utils.allure_utils import attach_response
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
 def _parse_expected(value):
-    """将预期值字符串转为 Python 类型（int / bool / dict / list / None）
+    """将预期值转为 Python 类型（支持 int / bool / dict / list / None / str）
 
     举例:
       "200"     → 200 (int)
       "true"    → True (bool)
       "null"    → None
+      []        → []  (list) — 来自 expected_json 已解析的 JSON 值
       "操作成功" → "操作成功" (str) — JSON 解析失败则原样返回
     """
-    if value is None or isinstance(value, (int, float, bool)):
+    if value is None or isinstance(value, (int, float, bool, list, dict)):
         return value
-    try:
-        return json.loads(value.strip())
-    except (json.JSONDecodeError, ValueError, TypeError):
-        return value
+    if isinstance(value, str):
+        try:
+            return json.loads(value.strip())
+        except (json.JSONDecodeError, ValueError, TypeError):
+            return value
+    return value
 
 
 def _fmt(body: dict) -> str:
