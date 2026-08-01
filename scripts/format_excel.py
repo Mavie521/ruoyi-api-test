@@ -63,7 +63,7 @@ help_data = [
     ["", "", "", ""],
     ["八、用例数据 Sheet 列颜色说明", "", "", ""],
     ["  红色表头 = 必填字段", "id / method / path / is_true / expected_json", "", ""],
-    ["  绿色表头 = 可选字段", "feature / story / title / headers / params / json / data / remark", "", ""],
+    ["  绿色表头 = 可选字段", "epic / feature / story / title / headers / params / json / data / remark", "", ""],
     ["  紫色表头 = SQL 断言", "sql_check / sql_expected / jsonExData / sqlExData", "", ""],
     ["  蓝色表头 = 文件下载", "expected_content_type / expected_content_min_bytes / expected_content_sha256", "", ""],
 ]
@@ -133,9 +133,9 @@ for col_idx, cell in enumerate(ws[1], 1):  # 表头在第1行
 ws.freeze_panes = "A2"
 
 # 列宽
-widths = {"A": 8, "B": 12, "C": 12, "D": 18, "E": 8, "F": 32, "G": 20, "H": 16,
-          "I": 45, "J": 16, "K": 38, "L": 14, "M": 16, "N": 16, "O": 16,
-          "P": 45, "Q": 16, "R": 26, "S": 26, "T": 8, "U": 8, "V": 8}
+widths = {"A": 8, "B": 14, "C": 12, "D": 12, "E": 18, "F": 8, "G": 32, "H": 20, "I": 16,
+          "J": 45, "K": 16, "L": 38, "M": 14, "N": 16, "O": 16, "P": 16,
+          "Q": 45, "R": 16, "S": 26, "T": 26, "U": 8, "V": 8, "W": 8}
 for letter, w in widths.items():
     ws.column_dimensions[letter].width = w
 
@@ -162,7 +162,7 @@ ws.add_data_validation(dv4)
 dv4.add("L2:L200")
 
 # is_true=FALSE → 灰底
-ws.conditional_formatting.add("A2:V200", CellIsRule(
+ws.conditional_formatting.add("A2:W200", CellIsRule(
     operator="equal", formula=['"FALSE"'],
     fill=PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid"),
     font=Font(color="808080")

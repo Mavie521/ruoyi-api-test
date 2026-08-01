@@ -98,12 +98,12 @@ def _pretty_json(data) -> str:
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
 def allure_init(case: dict):
-    """Allure 初始化：从 Excel 用例字典设置 feature / story / title
+    """Allure 初始化：从 Excel 用例字典设置四级标签
 
-    调用时机：每条用例开始时调用一次
-    设计原因：Excel 数据驱动的 case 没有 pytest 装饰器，
-             只能通过 allure.dynamic.xxx 在运行时动态设置标签
+    层级: Epic > Feature > Story > Title
+    Excel 可选的 epic 列默认值为「若依接口测试」，与代码测试线对齐。
     """
+    allure.dynamic.epic(case.get("epic", "若依接口测试"))
     allure.dynamic.feature(case.get("feature", "未分类模块"))
     allure.dynamic.story(case.get("story", "未分类场景"))
     allure.dynamic.title(f"TC{case.get('id', 'N/A')} - {case.get('title', '未命名用例')}")
