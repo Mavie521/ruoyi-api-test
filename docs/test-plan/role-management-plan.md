@@ -8,7 +8,7 @@
 | 测试模块 | 角色管理（SysRoleController） |
 | 测试类型 | 接口自动化 + 安全测试 |
 | 测试环境 | Docker（MySQL 8.0 + Redis 7 + RuoYi Backend） |
-| 测试工具 | Pytest / Requests / Allure / Locust |
+| 测试工具 | Pytest / Requests / Allure |
 | CI/CD | Jenkins Pipeline + 钉钉通知 |
 
 ## 2. 测试范围

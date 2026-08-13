@@ -572,8 +572,7 @@ ruoyi_api_test/
 ├── scripts/                # 编排脚本
 │   ├── run_all.sh          # CI/CD 主控（7 步流程）
 │   ├── wait_for_api.sh     # 后端就绪检测
-│   ├── notify.sh           # 钉钉通知（安全加固版）
-│   └── performance_test.py # Locust 压测
+│   └── notify.sh           # 钉钉通知（安全加固版）
 ├── docker-compose.yml      # 8 容器编排
 ├── Dockerfile.test         # 测试容器镜像
 ├── Jenkinsfile             # Jenkins Pipeline

@@ -246,8 +246,7 @@ ruoyi_api_test/
 │   ├── run_all.sh          #   CI/CD 主控脚本
 │   ├── wait_for_api.sh     #   等待后端就绪
 │   ├── notify.sh           #   钉钉通知
-│   ├── deploy.sh           #   一键部署
-│   └── performance_test.py #   Locust 压测
+│   └── deploy.sh           #   一键部署
 ├── tests/                  #   pytest 测试用例
 │   ├── conftest.py         #   Fixture 定义
 │   ├── test_role.py        #   角色模块 10 条
@@ -344,7 +343,6 @@ ry-network (bridge)
 | allure-pytest | 动态报告，失败自动 attach |
 | mysql-connector-python | 数据库连接池（10 连接复用） |
 | pytest-xdist | 多进程并行执行 |
-| Locust | 性能压测（50/100 并发） |
 | Docker Compose | 8 容器编排 |
 | Jenkins | CI/CD 流水线 |
 | pre-commit | Git 提交前代码检查 |
@@ -360,7 +358,6 @@ ry-network (bridge)
 | 测试用例 | `docs/test-cases/role-management-cases.md` |
 | 缺陷报告 | `docs/bug-reports/bug-001-xss-json-crash.md` |
 | 测试总结 | `docs/test-summary/role-management-summary.md` |
-| 性能报告 | `docs/test-summary/performance-benchmark.md` |
 
 ---
 

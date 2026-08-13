@@ -23,14 +23,6 @@ install-dev:                                ## 安装开发工具依赖
 precommit:                                  ## 安装 pre-commit 钩子
 	pre-commit install
 
-# ── 性能测试 ──────────────────────────────────
-
-perf:                                          ## Locust 压测（默认 50 并发，60s）
-	locust -f scripts/performance_test.py --headless -u $(U) -r $(R) -t $(T) --host=http://ruoyi-api:8080
-
-perf-web:                                      ## Locust Web 界面（浏览器实时监控）
-	locust -f scripts/performance_test.py --web-host 0.0.0.0 --host=http://ruoyi-api:8080
-
 # ── 测试执行 ──────────────────────────────────
 
 test: test-p0                              ## 默认：跑 P0 冒烟
@@ -53,7 +45,7 @@ test-keyword:                               ## 按关键字过滤: make test-key
 # ── 代码质量 ──────────────────────────────────
 
 lint:                                       ## pylint 静态检查
-	pylint api/ tests/ utils/ config/ testcases/ scripts/performance_test.py run.py conftest.py utils/assertions.py
+	pylint api/ tests/ utils/ config/ testcases/ run.py conftest.py utils/assertions.py
 
 format:                                     ## black 自动格式化
 	black api/ tests/ utils/ config/ scripts/

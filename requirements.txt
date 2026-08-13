@@ -32,6 +32,3 @@ mysql-connector-python>=9.0.0
 
 # 用例超时兜底（防止接口 hang 卡死整个流水线）
 pytest-timeout>=2.3.0
-
-# 性能测试
-locust>=2.31.0
