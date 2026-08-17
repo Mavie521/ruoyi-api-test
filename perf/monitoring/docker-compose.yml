@@ -1,0 +1,81 @@
+# =============================================
+# 性能监控三件套 — InfluxDB + Grafana + Prometheus
+# Node Exporter 是 Prometheus 采集宿主资源的小代理
+# 与被测若依栈（根目录 docker-compose.yml）隔离，独立启停
+# =============================================
+
+services:
+
+  influxdb:
+    image: influxdb:1.8
+    container_name: monitor-influxdb
+    restart: unless-stopped
+    environment:
+      INFLUXDB_DB: jmeter                 # 启动即创建 jmeter 库（JMeter 写入目标）
+      INFLUXDB_HTTP_LOG_ENABLED: "false"
+      INFLUXDB_REPORTING_DISABLED: "true"
+    ports:
+      - "8086:8086"                       # JMeter Backend Listener 写到这
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+    mem_limit: 384m
+    networks:
+      - monitor-network
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    container_name: monitor-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    mem_limit: 256m
+    networks:
+      - monitor-network
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: monitor-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    mem_limit: 384m
+    networks:
+      - monitor-network
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: monitor-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/host'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro,rslave
+    ports:
+      - "9100:9100"
+    mem_limit: 64m
+    networks:
+      - monitor-network
+
+volumes:
+  influxdb_data:
+  grafana_data:
+  prometheus_data:
+
+networks:
+  monitor-network:
+    driver: bridge

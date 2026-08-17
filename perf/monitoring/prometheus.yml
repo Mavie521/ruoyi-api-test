@@ -1,0 +1,9 @@
+# Prometheus 抓取配置
+global:
+  scrape_interval: 15s        # 每 15 秒采集一次
+
+scrape_configs:
+  # 采集 VM 宿主资源（CPU / 内存 / 磁盘 / 网络）
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
