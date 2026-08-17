@@ -17,6 +17,7 @@ services:
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_general_ci
+      - --innodb-buffer-pool-size=64M
     ports:
       - "3307:3306"
     volumes:
@@ -54,6 +55,7 @@ services:
         - RUOYI_VERSION=v3.9.2
     container_name: ry-api
     restart: unless-stopped
+    entrypoint: ["java", "-Xms256m", "-Xmx384m", "-jar", "app.jar"]
     depends_on:
       mysql:
         condition: service_healthy
