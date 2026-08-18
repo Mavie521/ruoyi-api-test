@@ -1,7 +1,7 @@
 # 若依系统性能测试 — 实战落地指南（JMeter + PerfMon + ServerAgent）
 
 > 对应文档：`若依系统 - 性能测试计划.docx`
-> 交付物：一套可复用 JMeter 脚本 + ServerAgent 资源监控部署脚本 + 本指南
+> 交付物：一套可复用 JMeter 脚本 + ServerAgent 资源监控（见第 3 节）+ 本指南
 
 ---
 
@@ -10,7 +10,6 @@
 | 文件 | 作用 |
 |------|------|
 | `perf/jmeter/ruoyi-perf-test.jmx` | JMeter 主脚本（参数化线程组，一套适配基准/负载/压力三场景） |
-| `perf/serveragent/install-serveragent.sh` | 在若依服务器上部署 ServerAgent，采 CPU/内存 |
 | `perf/README.md` | 本指南 |
 
 ---
@@ -59,14 +58,28 @@
 
 ServerAgent 是被测服务器上的资源采集代理，必须跑在若依所在的 VM 上（不是压测机）。
 
+**部署**（VM 上需有 Java）：下载 [ServerAgent 2.2.3](https://github.com/undera/perfmon-agent/releases/tag/2.2.3)，解压到 `~/serveragent`，用 systemd 配置为开机自启（推荐）：
+
 ```bash
-# 在 VM 上执行（脚本已放在仓库 perf/serveragent/ 下）
-cd ~/ruoyi-api-test
-git pull          # 拿到最新脚本（如果还没同步）
-bash perf/serveragent/install-serveragent.sh
+sudo tee /etc/systemd/system/serveragent.service >/dev/null <<'EOF'
+[Unit]
+Description=JMeter PerfMon ServerAgent
+After=network-online.target
+
+[Service]
+User=yy
+WorkingDirectory=/home/yy/serveragent
+ExecStart=/bin/bash /home/yy/serveragent/startAgent.sh --udp-port 0 --tcp-port 4444
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload && sudo systemctl enable --now serveragent
 ```
 
-脚本会自动：检查/装 Java → 下载 ServerAgent 2.2.3 → 解压 → 后台启动（端口 4444）。
+> 不想配自启时，手动后台启动：`cd ~/serveragent && nohup ./startAgent.sh --udp-port 0 --tcp-port 4444 >/tmp/serveragent.log 2>&1 &`
 
 **验证：**
 
@@ -113,7 +126,7 @@ PerfMon 监听器已经内置在脚本里（`jp@gc - PerfMon Metrics Collector`�
 
 你只需要：
 
-1. **被测服务器 VM 上**跑过 `install-serveragent.sh`（第 3 节），保证 4444 端口在监听
+1. **被测服务器 VM 上**已部署 ServerAgent 并监听 4444（见第 3 节）
 2. 打开脚本，展开「jp@gc - PerfMon Metrics Collector」，确认服务器 IP 和端口对得上
 3. 压测时它自动实时画资源曲线
 
@@ -216,7 +229,7 @@ for %u in (20 30 40 50) do jmeter -n -t ..\..\Code\claude_test01\ruoyi_api_test\
 
 | 问题 | 原因 | 解决 |
 |------|------|------|
-| PerfMon 监听器无曲线 | ServerAgent 没起 / 端口不通 | VM 上 `bash install-serveragent.sh`，检查 4444 端口和防火墙 |
+| PerfMon 监听器无曲线 | ServerAgent 没起 / 端口不通 | VM 上 `systemctl status serveragent`，检查 4444 端口和防火墙 |
 | 脚本加载报错 | 缺 PerfMon 插件 | 装完插件再打开脚本 |
 | 业务接口 401 | token 没提取到 | 单线程看结果树，确认登录返回了 `token` 字段 |
 | 全 405 | 地址/端口错 | 确认 `HOST=192.168.149.100`、`PORT=8080` |

@@ -27,6 +27,10 @@ reports/allure-report/
 reports/screenshots/
 reports/videos/
 
+# JMeter 压测生成物
+perf/jmeter/report/
+perf/jmeter/result/
+
 # 日志
 logs/
 *.log

@@ -1,6 +1,6 @@
 # =============================================
 # 性能监控三件套 — InfluxDB + Grafana + Prometheus
-# Node Exporter 是 Prometheus 采集宿主资源的小代理
+# Node Exporter / mysqld Exporter 是资源采集代理
 # 与被测若依栈（根目录 docker-compose.yml）隔离，独立启停
 # =============================================
 
@@ -50,6 +50,8 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     mem_limit: 384m
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # 访问宿主发布的 9404（JVM）、3307（MySQL）
     networks:
       - monitor-network
 
@@ -67,6 +69,21 @@ services:
       - /:/host:ro,rslave
     ports:
       - "9100:9100"
+    mem_limit: 64m
+    networks:
+      - monitor-network
+
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.15.1
+    container_name: monitor-mysqld-exporter
+    restart: unless-stopped
+    environment:
+      # 通过宿主发布的 3307 连到 ry-mysql；账号 exporter（见 README 建账号 SQL）
+      DATA_SOURCE_NAME: "exporter:exporter@(host.docker.internal:3307)/"
+    ports:
+      - "9104:9104"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     mem_limit: 64m
     networks:
       - monitor-network

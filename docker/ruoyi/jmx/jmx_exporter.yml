@@ -1,0 +1,24 @@
+# JMX Exporter 采集配置 — 采集若依后端 JVM 核心指标
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+
+rules:
+  # JVM 堆内存
+  - pattern: 'java.lang<type=Memory><>HeapMemoryUsage: (committed|used|max)'
+    name: jvm_memory_heap_$1_bytes
+  # JVM 非堆内存（元空间）
+  - pattern: 'java.lang<type=Memory><>NonHeapMemoryUsage: (committed|used|max)'
+    name: jvm_memory_nonheap_$1_bytes
+  # GC 次数与耗时
+  - pattern: 'java.lang<type=GarbageCollector, name=([^,]+)><>(CollectionCount|CollectionTime)'
+    name: jvm_gc_$2
+    type: COUNTER
+    labels:
+      gc: $1
+  # 线程数
+  - pattern: 'java.lang<type=Threading><>(ThreadCount|DaemonThreadCount|PeakThreadCount|TotalStartedThreadCount)'
+    name: jvm_threads_$1
+  # 类加载
+  - pattern: 'java.lang<type=ClassLoading><>(LoadedClassCount|UnloadedClassCount|TotalLoadedClassCount)'
+    name: jvm_classloading_$1

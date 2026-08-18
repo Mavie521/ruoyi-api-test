@@ -55,7 +55,7 @@ services:
         - RUOYI_VERSION=v3.9.2
     container_name: ry-api
     restart: unless-stopped
-    entrypoint: ["java", "-Xms256m", "-Xmx384m", "-jar", "app.jar"]
+    entrypoint: ["java", "-Xms256m", "-Xmx384m", "-javaagent:/app/jmx_prometheus_javaagent.jar=9404:/app/jmx_exporter.yml", "-jar", "app.jar"]
     depends_on:
       mysql:
         condition: service_healthy
@@ -66,8 +66,12 @@ services:
       RUOYI_NAME: RuoYi
       RUOYI_VERSION: 3.9.2
       RUOYI_PROFILE: /home/ruoyi/uploadPath
+    volumes:
+      - ./docker/ruoyi/jar/jmx_prometheus_javaagent-0.20.0.jar:/app/jmx_prometheus_javaagent.jar:ro
+      - ./docker/ruoyi/jmx/jmx_exporter.yml:/app/jmx_exporter.yml:ro
     ports:
       - "8080:8080"
+      - "9404:9404"
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/ >/dev/null 2>&1 || curl -sf http://localhost:8080/login >/dev/null 2>&1 || exit 1"]
       interval: 15s

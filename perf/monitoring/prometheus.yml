@@ -7,3 +7,13 @@ scrape_configs:
   - job_name: 'node'
     static_configs:
       - targets: ['node-exporter:9100']
+
+  # 采集若依后端 JVM（堆 / GC / 线程 / 类加载）
+  - job_name: 'jvm'
+    static_configs:
+      - targets: ['host.docker.internal:9404']
+
+  # 采集 MySQL 指标（连接 / 慢查询 / 缓存命中率）
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['mysqld-exporter:9104']
