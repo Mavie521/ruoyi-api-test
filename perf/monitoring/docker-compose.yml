@@ -77,9 +77,10 @@ services:
     image: prom/mysqld-exporter:v0.15.1
     container_name: monitor-mysqld-exporter
     restart: unless-stopped
-    environment:
-      # 通过宿主发布的 3307 连到 ry-mysql；账号 exporter（见 README 建账号 SQL）
-      DATA_SOURCE_NAME: "exporter:exporter@(host.docker.internal:3307)/"
+    command:
+      - '--config.my-cnf=/etc/mysql-exporter/my.cnf'
+    volumes:
+      - ./my.cnf:/etc/mysql-exporter/my.cnf:ro
     ports:
       - "9104:9104"
     extra_hosts:

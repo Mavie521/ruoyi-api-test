@@ -9,6 +9,8 @@ WORKDIR /app
 # 从构建上下文复制本地 JAR（不走网络下载）
 COPY jar/ruoyi-admin.jar app.jar
 
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 ENV TZ=Asia/Shanghai
 EXPOSE 8080
 

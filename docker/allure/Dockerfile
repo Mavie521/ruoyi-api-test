@@ -7,6 +7,7 @@ FROM eclipse-temurin:17-jre
 # JVM 默认编码设为 UTF-8（修复 Allure 环境块中文乱码）
 ENV LANG=C.UTF-8
 ENV JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
+ENV TZ=Asia/Shanghai
 
 WORKDIR /app
 

@@ -1,24 +1,48 @@
-# JMX Exporter 采集配置 — 采集若依后端 JVM 核心指标
+# JMX Exporter 采集配置 — 标准 Micrometer 命名（匹配 Grafana 4701 大盘）
 startDelaySeconds: 0
 lowercaseOutputName: true
 lowercaseOutputLabelNames: true
 
 rules:
-  # JVM 堆内存
-  - pattern: 'java.lang<type=Memory><>HeapMemoryUsage: (committed|used|max)'
-    name: jvm_memory_heap_$1_bytes
-  # JVM 非堆内存（元空间）
-  - pattern: 'java.lang<type=Memory><>NonHeapMemoryUsage: (committed|used|max)'
-    name: jvm_memory_nonheap_$1_bytes
-  # GC 次数与耗时
-  - pattern: 'java.lang<type=GarbageCollector, name=([^,]+)><>(CollectionCount|CollectionTime)'
-    name: jvm_gc_$2
+  # 堆内存 → jvm_memory_*_bytes{area="heap"}
+  - pattern: 'java.lang<type=Memory><HeapMemoryUsage>(\w+)'
+    name: jvm_memory_$1_bytes
+    type: GAUGE
+    labels:
+      area: heap
+  # 非堆内存 → jvm_memory_*_bytes{area="nonheap"}
+  - pattern: 'java.lang<type=Memory><NonHeapMemoryUsage>(\w+)'
+    name: jvm_memory_$1_bytes
+    type: GAUGE
+    labels:
+      area: nonheap
+  # GC 次数 → jvm_gc_pause_seconds_count
+  - pattern: 'java.lang<type=GarbageCollector, name=([^,]+)><CollectionCount>'
+    name: jvm_gc_pause_seconds_count
     type: COUNTER
     labels:
       gc: $1
-  # 线程数
-  - pattern: 'java.lang<type=Threading><>(ThreadCount|DaemonThreadCount|PeakThreadCount|TotalStartedThreadCount)'
-    name: jvm_threads_$1
-  # 类加载
-  - pattern: 'java.lang<type=ClassLoading><>(LoadedClassCount|UnloadedClassCount|TotalLoadedClassCount)'
-    name: jvm_classloading_$1
+  # GC 耗时（毫秒→秒）→ jvm_gc_pause_seconds_sum
+  - pattern: 'java.lang<type=GarbageCollector, name=([^,]+)><CollectionTime>'
+    name: jvm_gc_pause_seconds_sum
+    type: COUNTER
+    valueFactor: 0.001
+    labels:
+      gc: $1
+  # 线程数 → jvm_threads_*_threads
+  - pattern: 'java.lang<type=Threading><ThreadCount>'
+    name: jvm_threads_live_threads
+    type: GAUGE
+  - pattern: 'java.lang<type=Threading><DaemonThreadCount>'
+    name: jvm_threads_daemon_threads
+    type: GAUGE
+  - pattern: 'java.lang<type=Threading><PeakThreadCount>'
+    name: jvm_threads_peak_threads
+    type: GAUGE
+  # 类加载 → jvm_classes_*
+  - pattern: 'java.lang<type=ClassLoading><LoadedClassCount>'
+    name: jvm_classes_loaded_classes
+    type: GAUGE
+  - pattern: 'java.lang<type=ClassLoading><UnloadedClassCount>'
+    name: jvm_classes_unloaded_classes_total
+    type: COUNTER

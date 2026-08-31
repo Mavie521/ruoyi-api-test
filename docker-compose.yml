@@ -103,7 +103,8 @@ services:
     profiles:
       - test
     depends_on:
-      - ruoyi-api
+      ruoyi-api:
+        condition: service_healthy
     environment:
       BASE_URL: http://ruoyi-api:8080
       ENV: docker
@@ -143,6 +144,8 @@ services:
     user: "0:0"
     container_name: ry-allure-report
     restart: unless-stopped
+    profiles:
+      - report
     ports:
       - "8088:80"
     volumes:
