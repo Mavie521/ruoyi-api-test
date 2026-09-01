@@ -65,4 +65,7 @@ web_frontend/dist/
 !logs/.gitkeep
 !data/.gitkeep
 !cache/.gitkeep
+
+# 应用 jar 构建产物（90MB 大文件，不进 git）
+docker/ruoyi/jar/ruoyi-admin.jar
 cache/*.db-shm\ncache/*.db-wal
