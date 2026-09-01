@@ -17,12 +17,12 @@ pipeline {
                 script {
                     def ok = false
                     for (int i = 1; i <= 5; i++) {
-                        def r = sh(script: 'cd /app/ruoyi-api-test && git pull --ff-only origin main', returnStatus: true)
+                        def r = sh(script: 'cd /app/ruoyi-api-test && git fetch origin && git reset --hard origin/main', returnStatus: true)
                         if (r == 0) { ok = true; break }
-                        echo "第 ${i} 次 git pull 失败(网络波动),15 秒后重试..."
+                        echo "第 ${i} 次拉取失败(网络波动),15 秒后重试..."
                         sleep 15
                     }
-                    if (!ok) { error('git pull 连续失败 5 次: 无法连接 GitHub') }
+                    if (!ok) { error('拉取代码连续失败 5 次: 无法连接 GitHub') }
                 }
             }
         }
