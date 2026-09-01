@@ -38,7 +38,7 @@
 | **构建时间** | 全量 ~90s，P0 冒烟 < 30s |
 | **失败重试** | 网络波动自动重试 1 次 |
 | **部署方式** | Docker Compose 一键部署 / 本地直连 |
-| **CI/CD** | Jenkins Cron 每日 08:00 + 参数化手动构建 |
+| **CI/CD** | SCM 轮询自动触发 + 每日定时巡检（哈希错峰） + 手动构建 |
 
 ---
 
@@ -178,20 +178,23 @@ bash scripts/run_all.sh p0 fast
 
 | 方式 | 配置 | 说明 |
 |:---|:---|:---|
-| ⏰ Cron | `H 8 * * *` | 每天早上 08:00 自动触发 |
+| 🔄 SCM 轮询 | `H/5 * * * *` | 代码提交后 5 分钟内自动触发 |
+| ⏰ Cron | `H 18 * * *` | 每日定时巡检（哈希错峰） |
 | 🖱️ 手动 | 参数化构建 | Jenkins UI 选择 MODE/MARKER |
-| 🔌 Webhook | 未实现 | 预留 GitHub Push 触发 |
+| 🌐 Gitee 镜像 | — | 国内部署走 Gitee，解决 GitHub 访问不稳定 |
 
 ### 流水线流程
 
 ```mermaid
 graph LR
     subgraph Trigger["触发"]
-        Cron["⏰ Cron 08:00"]
+        Poll["🔄 SCM 轮询 H/5"]
+        Cron["⏰ Cron 每日巡检"]
         Manual["🖱️ 手动参数"]
     end
 
     subgraph Pipeline["Jenkins Pipeline ~90s"]
+        Update["更新代码<br/>git reset --hard"]
         Deploy["部署<br/>docker compose up -d"]
         Wait["等待就绪<br/>POST /login ×40"]
         Test["测试<br/>pytest"]
@@ -203,9 +206,10 @@ graph LR
         DingTalk["🔔 钉钉通知<br/>仅失败告警"]
     end
 
+    Poll --> Pipeline
     Cron --> Pipeline
     Manual --> Pipeline
-    Deploy --> Wait --> Test --> Report
+    Update --> Deploy --> Wait --> Test --> Report
     Report --> AllureReport
     Test --> DingTalk
 ```
