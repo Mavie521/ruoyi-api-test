@@ -12,7 +12,7 @@ pipeline {
     }
     triggers {
         pollSCM('H/5 * * * *')   // 每5分钟检测一次新提交
-        cron('*/3 * * * *')     // 每日定时执行
+        cron('H 18 * * *')     // 每日18点兜底
     }
     stages {
         stage('更新代码') {
