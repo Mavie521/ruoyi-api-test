@@ -31,6 +31,9 @@ reports/videos/
 perf/jmeter/report/
 perf/jmeter/result/
 
+# 监控凭据（含密码，不进代码）
+perf/monitoring/my.cnf
+
 # 日志
 logs/
 *.log

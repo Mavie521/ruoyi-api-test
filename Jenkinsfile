@@ -8,9 +8,15 @@ pipeline {
         string(name: 'RERUNS', defaultValue: '1', description: '失败重跑次数')
     }
     triggers {
-        cron('H 8 * * *')
+        pollSCM('H/5 * * * *')   // 每5分钟检测一次新提交
+        cron('H 15 * * *')       // 每日15点兜底
     }
     stages {
+        stage('更新代码') {
+            steps {
+                sh 'cd /app/ruoyi-api-test && git pull --ff-only origin main'
+            }
+        }
         stage('部署') {
             steps {
                 sh 'cd /app/ruoyi-api-test && docker compose down 2>/dev/null || true'
