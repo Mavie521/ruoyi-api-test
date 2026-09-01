@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    options {
+        disableConcurrentBuilds()
+    }
     parameters {
         choice(name: 'MODE', choices: ['fast', 'clean'], description: '运行模式')
         choice(name: 'MARKER', choices: ['p0', 'p1', 'p2', 'all'], description: '用例级别')
@@ -9,7 +12,7 @@ pipeline {
     }
     triggers {
         pollSCM('H/5 * * * *')   // 每5分钟检测一次新提交
-        cron('H 15 * * *')       // 每日15点兜底
+        cron('*/3 * * * *')     // 每日定时执行
     }
     stages {
         stage('更新代码') {
